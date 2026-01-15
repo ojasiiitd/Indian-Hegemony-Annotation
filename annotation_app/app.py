@@ -1,33 +1,21 @@
 # app.py
 from flask import Flask, render_template, request, redirect, jsonify, url_for
 from config import REGION_STATE_MAP, HEGEMONY_AXES
-from llm import generate_llm_output
 from storage import *
 from sheets import *
 from flask import session
 import json
 import os
 from config import DATA_FILE
+from llm import *
 
 app = Flask(__name__)
 app.secret_key = "dev-secret-key-change-later"
 
-def load_records():
-    records = []
-    if not os.path.exists(DATA_FILE):
-        return records
-
-    with open(DATA_FILE, "r", encoding="utf-8") as f:
-        for line in f:
-            try:
-                records.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return records
-
 @app.route("/", methods=["GET", "POST"])
 def annotate():
     if request.method == "POST":
+        print("🧱 METHOD- POST, ANNOTATION")
         record = build_record(request.form)
 
         # 🔑 store draft
@@ -66,26 +54,6 @@ def confirm():
 
     return redirect("/")
 
-@app.route("/generate", methods=["POST"])
-def generate():
-    data = request.json
-    prompt_type = data.get("prompt_type")
-
-    if prompt_type == "base":
-        prompt = data.get("base_prompt", "")
-    elif prompt_type == "identity":
-        prompt = data.get("identity_primed_prompt", "")
-    else:
-        return jsonify({"error": "Invalid prompt type"}), 400
-
-    if not prompt.strip():
-        return jsonify({"error": "Empty prompt"}), 400
-
-    try:
-        return jsonify({"text": generate_llm_output(prompt)})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route("/records")
 def records():
     records = load_records()
@@ -121,6 +89,41 @@ def admin_delete():
         print("Sheet rebuild failed:", e)
 
     return redirect(url_for("admin"))
+
+
+@app.route("/generate/gemini", methods=["POST"])
+def generate_gemini():
+    print("😋 GEMINI called")
+    data = request.json
+    prompt = data.get("prompt", "").strip()
+
+    if not prompt:
+        return jsonify({"error": "Empty prompt"}), 400
+
+    return jsonify({"text": generate_gemini_output(prompt)})
+
+
+@app.route("/generate/chatgpt", methods=["POST"])
+def generate_chatgpt():
+    print("😋 Chat  GPT called")
+    data = request.json
+    prompt = data.get("prompt", "").strip()
+
+    if not prompt:
+        return jsonify({"error": "Empty prompt"}), 400
+
+    return jsonify({"text": generate_chatgpt_output(prompt)})
+
+@app.route("/generate/llama", methods=["POST"])
+def generate_llama():
+    print("😋 Llama called")
+    data = request.json
+    prompt = data.get("prompt", "").strip()
+
+    if not prompt:
+        return jsonify({"error": "Empty prompt"}), 400
+
+    return jsonify({"text": generate_llama_output(prompt)})
 
 if __name__ == "__main__":
     app.run(debug=True)

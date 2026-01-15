@@ -1,29 +1,70 @@
 <div class="column">
+
   <h2 class="title is-5">{{ title }}</h2>
 
+  <!-- PROMPT -->
   <div class="field">
     <textarea class="textarea"
-          name="{{ prompt_name }}"
-          rows="3"
-          required>{{ draft[prefix].prompt if draft }}</textarea>
+              name="{{ prompt_name }}"
+              rows="3"
+              required>{{ draft[prefix].prompt if draft }}</textarea>
   </div>
 
+  <!-- GEMINI GENERATE -->
   <button type="button"
-          class="button is-dark mb-3"
-          onclick="generateOutput('{{ kind }}')">
+          class="button is-dark mb-2"
+          onclick="generateOutput('gemini', '{{ kind }}')">
     <img src="https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png"
-         alt="Google"
+         alt="Gemini"
          style="vertical-align: middle;">
+    &nbsp; Gemini
   </button>
 
+  <!-- GEMINI OUTPUT -->
   <div class="field">
     <label class="label">Gemini-3 Output</label>
     <textarea class="textarea"
-          id="{{ output_id }}"
-          name="{{ output_name }}"
-          rows="20"
-          readonly>{{ draft[prefix].llm_output if draft }}</textarea>
+              id="gemini_llm_output_{{ kind }}"
+              name="gemini_llm_output_{{ kind }}"
+              rows="15"
+              readonly>{{ draft.outputs.gemini[kind].text if draft }}</textarea>
   </div>
 
-  {% include "components/hegemony_axes.html" with context %}
+  <!-- CHATGPT GENERATE -->
+  <button type="button"
+          class="button is-link mb-3"
+          onclick="generateOutput('chatgpt', '{{ kind }}')">
+    🤖 ChatGPT
+  </button>
+
+  <!-- CHATGPT OUTPUT -->
+  <div class="field">
+    <label class="label">ChatGPT Output</label>
+    <textarea class="textarea"
+              id="chatgpt_llm_output_{{ kind }}"
+              name="chatgpt_llm_output_{{ kind }}"
+              rows="15"
+              readonly>{{ draft.outputs.gpt[kind].text if draft }}</textarea>
+  </div>
+
+    <!-- LLAMA GENERATE -->
+  <button type="button"
+          class="button is-warning mb-3"
+          onclick="generateOutput('llama', '{{ kind }}')">
+    LLama
+  </button>
+
+  <!-- LLAMA OUTPUT -->
+  <div class="field">
+    <label class="label">LLama Output</label>
+    <textarea class="textarea"
+              id="llama_llm_output_{{ kind }}"
+              name="llama_llm_output_{{ kind }}"
+              rows="15"
+              readonly>{{ draft.outputs.llama[kind].text if draft }}</textarea>
+  </div>
+
+  <!-- HEGEMONY AXES -->
+  {% include "components/hegemony_axes.html" %}
+
 </div>

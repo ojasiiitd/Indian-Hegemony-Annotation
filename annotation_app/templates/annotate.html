@@ -9,63 +9,222 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
 
 <form method="POST">
 
-{% include "components/region_state.html" %}
+  <!-- ================================================= -->
+  <!-- REGION / STATE -->
+  <!-- ================================================= -->
+  {% include "components/region_state.html" %}
 
-<div class="columns is-variable is-6">
+  <hr>
 
-  {% with
-     title="Base Prompt",
-     kind="base",
-     prefix="base",
-     prompt_name="base_prompt",
-     output_id="gemini_llm_output_base",
-     output_name="gemini_llm_output_base"
-  %}
-    {% include "components/prompt_column.html" %}
-  {% endwith %}
+  <!-- ================================================= -->
+  <!-- PROMPTS (SHARED ACROSS MODELS) -->
+  <!-- ================================================= -->
+  <div class="columns is-variable is-6">
 
-  {% with
-    title="Identity-Primed Prompt",
-    kind="identity",
-    prefix="identity_primed",
-    prompt_name="identity_primed_prompt",
-    output_id="gemini_llm_output_identity",
-    output_name="gemini_llm_output_identity"
-  %}
-    {% include "components/prompt_column.html" %}
-  {% endwith %}
+    <div class="column">
+      <label class="label">Base Prompt</label>
+      <textarea class="textarea"
+                name="base_prompt"
+                rows="3"
+                required>{{ draft.prompts.base if draft }}</textarea>
+    </div>
 
-</div>
+    <div class="column">
+      <label class="label">Identity-Primed Prompt</label>
+      <textarea class="textarea"
+                name="identity_primed_prompt"
+                rows="3"
+                required>{{ draft.prompts.identity if draft }}</textarea>
+    </div>
 
-<!-- GROUND TRUTH -->
-<div class="field">
-  <label class="label">Ground Truth (100–200 words)</label>
-  <div class="content is-small">
-    <p>
-      Provide a contextually grounded, non-hegemonic description informed by sociological knowledge and everyday practices.
-      The goal is <strong>meaningful correction, not perfection</strong>.
-    </p>
   </div>
-  <textarea class="textarea"
-            name="ground_truth"
-            rows="15"
-            required>{{ draft.ground_truth if draft }}</textarea>
-</div>
 
-<!-- REFERENCES -->
-<div class="field">
-  <label class="label">References (links only)</label>
-  <textarea class="textarea"
-            name="references"
-            rows="3"
-            placeholder="Paste URLs, one per line">{{ draft.references if draft }}</textarea>
-</div>
+  <hr>
 
-<div class="field has-text-right">
-  <button class="button is-info is-large" type="submit">
-    Review Annotation →
-  </button>
-</div>
+  <!-- ================================================= -->
+  <!-- GEMINI MODEL -->
+  <!-- ================================================= -->
+  <h2 class="title is-4">Model 1</h2>
+
+  <div class="columns is-variable is-6">
+
+    <!-- GEMINI BASE -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-dark mb-3"
+              onclick="generateOutput('gemini','base')">
+        Gemini
+      </button>
+
+      <textarea class="textarea"
+          id="gemini_llm_output_base"
+          name="gemini_base_output"
+          rows="15"
+          readonly>{{ draft.outputs.gemini.base.text if draft }}</textarea>
+
+      {% with model="gemini" , kind="base" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+    <!-- GEMINI IDENTITY -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-dark mb-3"
+              onclick="generateOutput('gemini','identity')">
+        Gemini
+      </button>
+
+      <textarea class="textarea"
+          id="gemini_llm_output_identity"
+          name="gemini_identity_output"
+          rows="15"
+          readonly>{{ draft.outputs.gemini.identity.text if draft }}</textarea>
+
+      {% with model="gemini" , kind="identity" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+  </div>
+
+  <hr>
+
+  <!-- ================================================= -->
+  <!-- GPT MODEL -->
+  <!-- ================================================= -->
+  <h2 class="title is-4">Model 2</h2>
+
+  <div class="columns is-variable is-6">
+
+    <!-- GPT BASE -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-link mb-3"
+              onclick="generateOutput('chatgpt','base')">
+        GPT
+      </button>
+
+      <textarea class="textarea"
+          id="chatgpt_llm_output_base"
+          name="gpt_base_output"
+          rows="15"
+          readonly>{{ draft.outputs.gpt.base.text if draft }}</textarea>
+
+      {% with model="gpt" , kind="base" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+    <!-- GPT IDENTITY -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-link mb-3"
+              onclick="generateOutput('chatgpt','identity')">
+        GPT
+      </button>
+
+      <textarea class="textarea"
+          id="chatgpt_llm_output_identity"
+          name="gpt_identity_output"
+          rows="15"
+          readonly>{{ draft.outputs.gpt.identity.text if draft }}</textarea>
+
+      {% with model="gpt" , kind="identity" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+  </div>
+
+  <hr>
+
+  <!-- ================================================= -->
+  <!-- LLama MODEL -->
+  <!-- ================================================= -->
+  <h2 class="title is-4">Model 3</h2>
+
+  <div class="columns is-variable is-6">
+
+    <!-- LLama BASE -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-warning mb-3"
+              onclick="generateOutput('llama','base')">
+        LLama
+      </button>
+
+      <textarea class="textarea"
+          id="llama_llm_output_base"
+          name="llama_base_output"
+          rows="15"
+          readonly>{{ draft.outputs.llama.base.text if draft }}</textarea>
+
+      {% with model="llama" , kind="base" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+    <!-- LLama IDENTITY -->
+    <div class="column">
+
+      <button type="button"
+              class="button is-warning mb-3"
+              onclick="generateOutput('llama','identity')">
+        LLama
+      </button>
+
+      <textarea class="textarea"
+          id="llama_llm_output_identity"
+          name="llama_identity_output"
+          rows="15"
+          readonly>{{ draft.outputs.llama.identity.text if draft }}</textarea>
+
+      {% with model="llama" , kind="identity" %}
+        {% include "components/hegemony_axes.html" %}
+      {% endwith %}
+    </div>
+
+  </div>
+
+  <hr>
+  <!-- ================================================= -->
+  <!-- GROUND TRUTH -->
+  <!-- ================================================= -->
+  <div class="field">
+    <label class="label">Ground Truth (100–200 words)</label>
+    <div class="content is-small">
+      <p>
+        Provide a contextually grounded, non-hegemonic description informed by sociological knowledge
+        and everyday practices. The goal is <strong>meaningful correction, not perfection</strong>.
+      </p>
+    </div>
+    <textarea class="textarea"
+              name="ground_truth"
+              rows="15"
+              required>{{ draft.ground_truth if draft }}</textarea>
+  </div>
+
+  <!-- REFERENCES -->
+  <div class="field">
+    <label class="label">References (links only)</label>
+    <textarea class="textarea"
+              name="references"
+              rows="3"
+              placeholder="Paste URLs, one per line">{{ draft.references if draft }}</textarea>
+  </div>
+
+  <!-- SUBMIT -->
+  <div class="field has-text-right">
+    <button class="button is-info is-large" type="submit">
+      Review Annotation →
+    </button>
+  </div>
 
 </form>
 

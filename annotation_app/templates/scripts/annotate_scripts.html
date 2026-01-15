@@ -35,26 +35,45 @@
   });
 </script>
 
+
+
 <script>
-async function generateOutput(type) {
-  const basePrompt = document.querySelector("textarea[name='base_prompt']").value;
-  const identityPrompt = document.querySelector("textarea[name='identity_primed_prompt']").value;
+async function generateOutput(model, kind) {
 
-  const outputBox = type === "base"
-      ? document.getElementById("gemini_llm_output_base")
-      : document.getElementById("gemini_llm_output_identity");
+  // 1. Read the correct prompt
+  const prompt =
+    kind === "base"
+      ? document.querySelector("textarea[name='base_prompt']").value
+      : document.querySelector("textarea[name='identity_primed_prompt']").value;
 
-  outputBox.value = "Generating response…";
+  if (!prompt.trim()) {
+    alert("Prompt is empty");
+    return;
+  }
 
+  // 2. Target the correct output textarea
+  // IDs:
+  // gemini_llm_output_base
+  // gemini_llm_output_identity
+  // chatgpt_llm_output_base
+  // chatgpt_llm_output_identity
+  const outputBox = document.getElementById(
+    `${model}_llm_output_${kind}`
+  );
+
+  if (!outputBox) {
+    alert("Output box not found in DOM.");
+    return;
+  }
+
+  outputBox.value = "Generating…";
+
+  // 3. Call backend
   try {
-    const response = await fetch("/generate", {
+    const response = await fetch(`/generate/${model}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        prompt_type: type,
-        base_prompt: basePrompt,
-        identity_primed_prompt: identityPrompt
-      })
+      body: JSON.stringify({ prompt })
     });
 
     const data = await response.json();
@@ -66,7 +85,38 @@ async function generateOutput(type) {
     }
 
   } catch (err) {
+    console.error(err);
     outputBox.value = "Request failed.";
   }
 }
+</script>
+
+
+<script>
+let currentStep = 1;
+
+function showStep(step) {
+  document.querySelectorAll(".step").forEach(div => {
+    div.classList.add("is-hidden");
+  });
+
+  const el = document.getElementById(`step-${step}`);
+  if (el) {
+    el.classList.remove("is-hidden");
+    currentStep = step;
+  }
+}
+
+function nextStep() {
+  showStep(currentStep + 1);
+}
+
+function prevStep() {
+  showStep(currentStep - 1);
+}
+
+// Optional: start at step 1 explicitly
+document.addEventListener("DOMContentLoaded", () => {
+  showStep(1);
+});
 </script>
