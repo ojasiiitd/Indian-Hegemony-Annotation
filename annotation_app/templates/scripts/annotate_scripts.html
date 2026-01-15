@@ -1,0 +1,72 @@
+<script>
+  const regionStateMap = {{ region_state_map | tojson }};
+
+  function updateState() {
+    const regionSelect = document.getElementById("region");
+    const stateSelect = document.getElementById("state");
+
+    const region = regionSelect.value;
+    stateSelect.innerHTML = "";
+
+    if (!region) {
+      stateSelect.innerHTML = "<option value=''>Select state</option>";
+      return;
+    }
+
+    const state = regionStateMap[region];
+    const option = document.createElement("option");
+    option.value = state;
+    option.text = state;
+    stateSelect.appendChild(option);
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    {% if draft %}
+      const region = "{{ draft.region }}";
+      const state = "{{ draft.state }}";
+
+      const regionSelect = document.getElementById("region");
+      regionSelect.value = region;
+
+      updateState();  // now safe
+
+      document.getElementById("state").value = state;
+    {% endif %}
+  });
+</script>
+
+<script>
+async function generateOutput(type) {
+  const basePrompt = document.querySelector("textarea[name='base_prompt']").value;
+  const identityPrompt = document.querySelector("textarea[name='identity_primed_prompt']").value;
+
+  const outputBox = type === "base"
+      ? document.getElementById("gemini_llm_output_base")
+      : document.getElementById("gemini_llm_output_identity");
+
+  outputBox.value = "Generating response…";
+
+  try {
+    const response = await fetch("/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt_type: type,
+        base_prompt: basePrompt,
+        identity_primed_prompt: identityPrompt
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.error) {
+      outputBox.value = "Error: " + data.error;
+    } else {
+      outputBox.value = data.text;
+    }
+
+  } catch (err) {
+    outputBox.value = "Request failed.";
+  }
+}
+</script>

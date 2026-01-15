@@ -1,0 +1,113 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<h1 class="title">Review Annotation</h1>
+<p class="subtitle">
+Please verify your responses before final submission.
+</p>
+
+<form method="POST" action="/confirm">
+
+  <!-- Preserve full record -->
+  <input type="hidden" name="record" value='{{ record | tojson }}'>
+
+  <hr>
+
+  <!-- REGION / STATE -->
+  <h2 class="title is-5">Region & State</h2>
+  <p>
+    <strong>{{ record.region }}</strong> — {{ record.state }}
+  </p>
+
+  <hr>
+
+  <!-- BASE vs IDENTITY -->
+  <div class="columns is-variable is-6">
+
+    <!-- BASE COLUMN -->
+    <div class="column">
+      <h3 class="title is-6">Base Prompt</h3>
+
+      <p class="has-text-weight-semibold">Prompt</p>
+      <pre class="wrapped-pre">{{ record.base.prompt }}</pre>
+
+      <p class="has-text-weight-semibold mt-3">Gemini-3 Output</p>
+      <pre class="wrapped-pre">{{ record.base.llm_output }}</pre>
+
+      <p class="has-text-weight-semibold mt-3">Hegemony Axes</p>
+      <ul>
+        {% for axis, data in record.base.hegemony.items() %}
+          <li>
+            <strong>{{ axis|capitalize }}</strong>:
+            {{ data.present }}
+            {% if data.present == "yes" %}
+              — {{ data.impact }}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- IDENTITY-PRIMED COLUMN -->
+    <div class="column">
+      <h3 class="title is-6">Identity-Primed Prompt</h3>
+
+      <p class="has-text-weight-semibold">Prompt</p>
+      <pre class="wrapped-pre">{{ record.identity_primed.prompt }}</pre>
+
+      <p class="has-text-weight-semibold mt-3">Gemini-3 Output</p>
+      <pre class="wrapped-pre">{{ record.identity_primed.llm_output }}</pre>
+
+      <p class="has-text-weight-semibold mt-3">Hegemony Axes</p>
+      <ul>
+        {% for axis, data in record.identity_primed.hegemony.items() %}
+          <li>
+            <strong>{{ axis|capitalize }}</strong>:
+            {{ data.present }}
+            {% if data.present == "yes" %}
+              — {{ data.impact }}
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+  <hr>
+
+  <!-- GROUND TRUTH -->
+  <h3 class="title is-6">Ground Truth</h3>
+  <pre class="wrapped-pre">{{ record.ground_truth }}</pre>
+
+  <!-- REFERENCES -->
+  <h3 class="title is-6 mt-4">References</h3>
+  <pre class="wrapped-pre">{{ record.references }}</pre>
+
+  <hr>
+
+<!-- ACTIONS -->
+<div class="columns is-vcentered">
+
+  <!-- Edit -->
+  <div class="column">
+    <a href="/" class="button is-dark is-medium">
+      ← Edit
+    </a>
+  </div>
+
+  <!-- Confirm -->
+  <div class="column has-text-right">
+    <form method="POST" action="/confirm">
+      <input type="hidden" name="record" value='{{ record | tojson }}'>
+      <button class="button is-success is-medium" type="submit">
+        Confirm & Submit →
+      </button>
+    </form>
+  </div>
+
+</div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,29 @@
+<div class="column">
+  <h2 class="title is-5">{{ title }}</h2>
+
+  <div class="field">
+    <textarea class="textarea"
+          name="{{ prompt_name }}"
+          rows="3"
+          required>{{ draft[prefix].prompt if draft }}</textarea>
+  </div>
+
+  <button type="button"
+          class="button is-dark mb-3"
+          onclick="generateOutput('{{ kind }}')">
+    <img src="https://www.gstatic.com/images/branding/product/1x/googleg_16dp.png"
+         alt="Google"
+         style="vertical-align: middle;">
+  </button>
+
+  <div class="field">
+    <label class="label">Gemini-3 Output</label>
+    <textarea class="textarea"
+          id="{{ output_id }}"
+          name="{{ output_name }}"
+          rows="20"
+          readonly>{{ draft[prefix].llm_output if draft }}</textarea>
+  </div>
+
+  {% include "components/hegemony_axes.html" with context %}
+</div>

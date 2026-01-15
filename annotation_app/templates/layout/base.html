@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Cultural Hegemony Annotation{% endblock %}</title>
+
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+
+  {% block styles %}
+    <style>
+    .wrapped-pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    background-color: #f8f9ff;
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid #e6e8f0;
+    }
+    body {
+        background-color: #f7f8fb;
+    }
+
+    /* Main container */
+    .container {
+        max-width: 1100px;
+    }
+
+    /* Titles */
+    .title {
+        color: #3b3f5c;
+    }
+
+    .subtitle {
+        color: #6b6f8a;
+    }
+
+    /* Section boxes (hegemony axes) */
+    .box {
+        background-color: #fdfdff;
+        border: 1px solid #e6e8f0;
+        border-radius: 10px;
+    }
+
+    /* Inputs & textareas */
+    .input,
+    .textarea,
+    select {
+        background-color: #fbfbfe;
+        border-color: #dcdff1;
+    }
+
+    .input:focus,
+    .textarea:focus,
+    select:focus {
+        border-color: #a5b4fc;
+        box-shadow: 0 0 0 0.125em rgba(165, 180, 252, 0.25);
+    }
+
+    /* Labels */
+    .label {
+        color: #4a4e69;
+        font-weight: 600;
+    }
+
+    /* Buttons */
+    .button.is-link.is-light {
+        background-color: #e8edff;
+        color: #3b5bdb;
+        border: none;
+    }
+
+    .button.is-link.is-light:hover {
+        background-color: #dbe4ff;
+    }
+
+    .button.is-info.is-light {
+        background-color: #e6fcf5;
+        color: #087f5b;
+        border: none;
+    }
+
+    .button.is-info.is-light:hover {
+        background-color: #c3fae8;
+    }
+
+    .button.is-primary {
+        background-color: #cdb4db;
+        border: none;
+        color: #2f2f2f;
+    }
+
+    .button.is-primary:hover {
+        background-color: #b89ad3;
+    }
+
+    /* Horizontal rules */
+    hr {
+        background-color: #e6e8f0;
+        height: 1px;
+        border: none;
+        margin: 2rem 0;
+    }
+
+    /* Helper text */
+    .content.is-small {
+        color: #5f647d;
+    }
+    </style>
+  {% endblock %}
+</head>
+
+<body class="section">
+  <div class="container">
+    <nav class="navbar is-light mb-5" role="navigation">
+    <div class="navbar-brand">
+        <a class="navbar-item has-text-weight-semibold">
+        Cultural Hegemony Annotation
+        </a>
+    </div>
+
+    <div class="navbar-menu">
+        <div class="navbar-start">
+        <a class="navbar-item" href="/">
+            Annotate
+        </a>
+        <a class="navbar-item" href="/records">
+            Show Records
+        </a>
+        <a class="navbar-item" href="/admin">
+            Admin
+        </a>
+        </div>
+    </div>
+    </nav>
+    {% block content %}{% endblock %}
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

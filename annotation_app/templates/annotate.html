@@ -1,0 +1,76 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<h1 class="title">Cultural Hegemony Annotation</h1>
+<p class="subtitle">
+This task evaluates cultural hegemony in LLM-generated responses across Indian States.
+</p>
+
+<form method="POST">
+
+{% include "components/region_state.html" %}
+
+<div class="columns is-variable is-6">
+
+  {% with
+     title="Base Prompt",
+     kind="base",
+     prefix="base",
+     prompt_name="base_prompt",
+     output_id="gemini_llm_output_base",
+     output_name="gemini_llm_output_base"
+  %}
+    {% include "components/prompt_column.html" %}
+  {% endwith %}
+
+  {% with
+    title="Identity-Primed Prompt",
+    kind="identity",
+    prefix="identity_primed",
+    prompt_name="identity_primed_prompt",
+    output_id="gemini_llm_output_identity",
+    output_name="gemini_llm_output_identity"
+  %}
+    {% include "components/prompt_column.html" %}
+  {% endwith %}
+
+</div>
+
+<!-- GROUND TRUTH -->
+<div class="field">
+  <label class="label">Ground Truth (100–200 words)</label>
+  <div class="content is-small">
+    <p>
+      Provide a contextually grounded, non-hegemonic description informed by sociological knowledge and everyday practices.
+      The goal is <strong>meaningful correction, not perfection</strong>.
+    </p>
+  </div>
+  <textarea class="textarea"
+            name="ground_truth"
+            rows="15"
+            required>{{ draft.ground_truth if draft }}</textarea>
+</div>
+
+<!-- REFERENCES -->
+<div class="field">
+  <label class="label">References (links only)</label>
+  <textarea class="textarea"
+            name="references"
+            rows="3"
+            placeholder="Paste URLs, one per line">{{ draft.references if draft }}</textarea>
+</div>
+
+<div class="field has-text-right">
+  <button class="button is-info is-large" type="submit">
+    Review Annotation →
+  </button>
+</div>
+
+</form>
+
+{% endblock %}
+
+{% block scripts %}
+  {% include "scripts/annotate_scripts.html" %}
+{% endblock %}

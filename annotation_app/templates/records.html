@@ -1,0 +1,94 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<h1 class="title">Collected Annotations</h1>
+<p class="subtitle">
+All submitted records (latest first).
+</p>
+
+{% if not records %}
+  <p>No records yet.</p>
+{% endif %}
+
+{% for r in records %}
+<div class="box">
+
+  <!-- HEADER -->
+  <div class="columns is-mobile">
+    <div class="column">
+      <strong>ID:</strong> {{ r.id }}<br>
+      <strong>Region:</strong> {{ r.region }} — {{ r.state }}
+    </div>
+    <div class="column has-text-right">
+      <small>{{ r.timestamp }}</small>
+    </div>
+  </div>
+
+  <hr>
+
+  <!-- PROMPTS -->
+  <div class="columns is-variable is-6">
+
+    <div class="column">
+      <h3 class="has-text-weight-semibold">Base Prompt</h3>
+      <pre class="wrapped-pre">{{ r.base.prompt }}</pre>
+
+      <p class="has-text-weight-semibold mt-2">Gemini Output</p>
+      <pre class="wrapped-pre">{{ r.base.llm_output }}</pre>
+    </div>
+
+    <div class="column">
+      <h3 class="has-text-weight-semibold">Identity-Primed Prompt</h3>
+      <pre class="wrapped-pre">{{ r.identity_primed.prompt }}</pre>
+
+      <p class="has-text-weight-semibold mt-2">Gemini Output</p>
+      <pre class="wrapped-pre">{{ r.identity_primed.llm_output }}</pre>
+    </div>
+
+  </div>
+
+  <hr>
+
+  <!-- HEGEMONY SUMMARY -->
+  <div class="columns">
+
+    <div class="column">
+      <h4 class="has-text-weight-semibold">Base Hegemony</h4>
+      <ul>
+        {% for axis, data in r.base.hegemony.items() %}
+          <li>
+            {{ axis|capitalize }}: {{ data.present }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="column">
+      <h4 class="has-text-weight-semibold">Identity-Primed Hegemony</h4>
+      <ul>
+        {% for axis, data in r.identity_primed.hegemony.items() %}
+          <li>
+            {{ axis|capitalize }}: {{ data.present }}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+  </div>
+
+  <hr>
+
+  <!-- GROUND TRUTH -->
+  <h4 class="has-text-weight-semibold">Ground Truth</h4>
+  <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
+
+  {% if r.references %}
+    <h4 class="has-text-weight-semibold mt-3">References</h4>
+    <pre class="wrapped-pre">{{ r.references }}</pre>
+  {% endif %}
+
+</div>
+{% endfor %}
+
+{% endblock %}
