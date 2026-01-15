@@ -41,14 +41,26 @@ def load_records():
 
 def extract_hegemony(form, prefix):
     """
-    Extract hegemony axes for a given (model, prompt_type) prefix,
-    e.g. prefix = 'gemini_base', 'gpt_identity'
+    prefix examples:
+      - gemini_base
+      - gemini_identity
+      - gpt_base
+      - llama_identity
     """
+
     result = {}
 
     for axis in HEGEMONY_AXES:
-        present = form.get(f"{prefix}_{axis}_hegemony", "no")
-        impact = form.get(f"{prefix}_{axis}_impact", "").strip()
+        # NOTE: matches your HTML exactly (axis + "hegemony")
+        present = form.get(
+            f"{prefix}_{axis}_hegemony",
+            "no"
+        )
+
+        impact = form.get(
+            f"{prefix}_{axis}_impact",
+            ""
+        ).strip()
 
         if present == "no" or impact == "" or impact.upper() == "NULL":
             impact = None
@@ -66,6 +78,7 @@ def extract_hegemony(form, prefix):
 # =====================================================
 
 def build_record(form):
+    print("🪭🪭🪭🪭🪭🪭" , extract_hegemony(form, "gemini_base"))
     return {
         "id": str(uuid.uuid4()),
         "timestamp": datetime.utcnow().isoformat(),

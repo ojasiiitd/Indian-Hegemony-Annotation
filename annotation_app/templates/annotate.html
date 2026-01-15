@@ -61,7 +61,8 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
           id="gemini_llm_output_base"
           name="gemini_base_output"
           rows="15"
-          readonly>{{ draft.outputs.gemini.base.text if draft }}</textarea>
+          readonly
+          required>{{ draft.outputs.gemini.base.text if draft }}</textarea>
 
       {% with model="gemini" , kind="base" %}
         {% include "components/hegemony_axes.html" %}

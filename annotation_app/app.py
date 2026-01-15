@@ -34,6 +34,13 @@ def annotate():
         draft=draft
     )
 
+@app.route("/freshannotate", methods=["GET", "POST"])
+def freshannotate():
+    # Retrieve and discard draft
+    session.pop("draft_record", None)
+    return redirect("/")
+
+
 @app.route("/confirm", methods=["POST"])
 def confirm():
     # Retrieve and discard draft in one step

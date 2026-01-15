@@ -14,9 +14,7 @@ All submitted records (latest first).
 {% for r in records %}
 <div class="box">
 
-  <!-- ================================================= -->
   <!-- HEADER -->
-  <!-- ================================================= -->
   <div class="columns is-mobile">
     <div class="column">
       <strong>ID:</strong> {{ r.id }}<br>
@@ -29,17 +27,13 @@ All submitted records (latest first).
 
   <hr>
 
-  <!-- ================================================= -->
   <!-- PROMPTS -->
-  <!-- ================================================= -->
   <h3 class="has-text-weight-semibold">Prompts</h3>
-
   <div class="columns is-variable is-6">
     <div class="column">
       <strong>Base Prompt</strong>
       <pre class="wrapped-pre">{{ r.prompts.base }}</pre>
     </div>
-
     <div class="column">
       <strong>Identity-Primed Prompt</strong>
       <pre class="wrapped-pre">{{ r.prompts.identity }}</pre>
@@ -48,126 +42,37 @@ All submitted records (latest first).
 
   <hr>
 
-  <!-- ================================================= -->
-  <!-- GEMINI OUTPUTS -->
-  <!-- ================================================= -->
-  <h3 class="has-text-weight-semibold">Gemini Outputs</h3>
+  <!-- MODEL OUTPUTS -->
+  {% for model, model_data in r.outputs.items() %}
+    {% set idx = loop.index %}
+    <h3 class="has-text-weight-semibold">Model {{ idx }} Outputs</h3>
 
-  <div class="columns is-variable is-6">
+    <div class="columns is-variable is-6">
 
-    <!-- GEMINI BASE -->
-    <div class="column">
-      <strong>Base Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.gemini.base.text }}</pre>
+      {% for kind in ["base", "identity"] %}
+      <div class="column">
+        <strong>{{ kind|capitalize }} Prompt</strong>
+        <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
 
-      <ul>
-        {% for axis, data in r.outputs.gemini.base.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
+        <ul>
+          {% for axis, data in model_data[kind].hegemony.items() %}
+            <li>
+              {{ axis|capitalize }}: {{ data.present }}
+              {% if data.impact is not none %}
+                – {{ data.impact }}
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+
     </div>
 
-    <!-- GEMINI IDENTITY -->
-    <div class="column">
-      <strong>Identity-Primed Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.gemini.identity.text }}</pre>
+    <hr>
+  {% endfor %}
 
-      <ul>
-        {% for axis, data in r.outputs.gemini.identity.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-  </div>
-
-  <hr>
-
-  <!-- ================================================= -->
-  <!-- GPT OUTPUTS -->
-  <!-- ================================================= -->
-  <h3 class="has-text-weight-semibold">GPT Outputs</h3>
-
-  <div class="columns is-variable is-6">
-
-    <!-- GPT BASE -->
-    <div class="column">
-      <strong>Base Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.gpt.base.text }}</pre>
-
-      <ul>
-        {% for axis, data in r.outputs.gpt.base.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- GPT IDENTITY -->
-    <div class="column">
-      <strong>Identity-Primed Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.gpt.identity.text }}</pre>
-
-      <ul>
-        {% for axis, data in r.outputs.gpt.identity.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-  </div>
-
-  <hr>
-
-  <!-- ================================================= -->
-  <!-- LLAMA OUTPUTS -->
-  <!-- ================================================= -->
-  <h3 class="has-text-weight-semibold">LLama Outputs</h3>
-
-  <div class="columns is-variable is-6">
-
-    <!-- LLAMA BASE -->
-    <div class="column">
-      <strong>Base Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.llama.base.text }}</pre>
-
-      <ul>
-        {% for axis, data in r.outputs.llama.base.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-    <!-- LLAMA IDENTITY -->
-    <div class="column">
-      <strong>Identity-Primed Prompt</strong>
-      <pre class="wrapped-pre">{{ r.outputs.llama.identity.text }}</pre>
-
-      <ul>
-        {% for axis, data in r.outputs.llama.identity.hegemony.items() %}
-          <li>
-            {{ axis|capitalize }}: {{ data.present }}
-          </li>
-        {% endfor %}
-      </ul>
-    </div>
-
-  </div>
-
-  <hr>
-
-  <!-- ================================================= -->
   <!-- GROUND TRUTH -->
-  <!-- ================================================= -->
   <h4 class="has-text-weight-semibold">Ground Truth</h4>
   <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
 

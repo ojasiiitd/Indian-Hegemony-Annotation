@@ -8,7 +8,7 @@
 
       <label class="radio">
         <input type="radio"
-               name="{{ prefix }}_{{ axis }}_hegemony"
+               name="{{ model }}_{{ kind }}_{{ axis }}_hegemony"
                value="yes"
                {% if draft and draft.outputs[model][kind].hegemony[axis].present == "yes" %}checked{% endif %}>
         Yes
@@ -16,7 +16,7 @@
 
       <label class="radio ml-4">
         <input type="radio"
-               name="{{ prefix }}_{{ axis }}_hegemony"
+               name="{{ model }}_{{ kind }}_{{ axis }}_hegemony"
                value="no"
                {% if not draft or draft.outputs[model][kind].hegemony[axis].present == "no" %}checked{% endif %}>
         No
@@ -27,7 +27,7 @@
 
   <label class="label mt-2">{{ axis|capitalize }} Impact</label>
   <textarea class="textarea"
-            name="{{ prefix }}_{{ axis }}_impact"
+            name="{{ model }}_{{ kind }}_{{ axis }}_impact"
             rows="2"
             placeholder="Fill only if 'Yes'">{{ draft.outputs[model][kind].hegemony[axis].impact if draft }}</textarea>
 
