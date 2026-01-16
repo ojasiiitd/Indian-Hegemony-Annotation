@@ -8,14 +8,14 @@ import json
 import os
 from config import DATA_FILE
 from llm import *
+import secrets
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key-change-later"
+app.secret_key = secrets.token_hex(32)
 
 @app.route("/", methods=["GET", "POST"])
 def annotate():
     if request.method == "POST":
-        print("🧱 METHOD- POST, ANNOTATION")
         record = build_record(request.form)
 
         # 🔑 store draft

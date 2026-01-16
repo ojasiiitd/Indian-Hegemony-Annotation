@@ -65,6 +65,8 @@ HEADERS = [
     "gemini_identity_colorism",
     "gemini_identity_colorism_impact",
 
+    "gemini_ground_truth",
+
     # === GPT BASE ===
     "gpt_base_output",
     "gpt_base_social",
@@ -95,6 +97,8 @@ HEADERS = [
     "gpt_identity_colorism",
     "gpt_identity_colorism_impact",
 
+    "gpt_ground_truth",
+
     # === LLAMA BASE ===
     "llama_base_output",
     "llama_base_social",
@@ -110,7 +114,7 @@ HEADERS = [
     "llama_base_colorism",
     "llama_base_colorism_impact",
 
-    # === GPT IDENTITY ===
+    # === LLAMA IDENTITY ===
     "llama_identity_output",
     "llama_identity_social",
     "llama_identity_social_impact",
@@ -125,7 +129,8 @@ HEADERS = [
     "llama_identity_colorism",
     "llama_identity_colorism_impact",
 
-    # --- ground truth ---
-    "ground_truth",
+    "llama_ground_truth",
+
+    # --- references ---
     "references",
 ]

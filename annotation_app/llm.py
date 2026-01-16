@@ -24,7 +24,7 @@ def generate_gemini_output(prompt: str) -> str:
     Placeholder.
     Replace with Gemini later.
     """
-    return f"[GEMINI output placeholder]\n\n{prompt}"
+    return f"[Model1 output placeholder]\n\n{prompt}"
 
 
 def generate_llama_output(prompt: str) -> str:
@@ -32,7 +32,7 @@ def generate_llama_output(prompt: str) -> str:
     Placeholder.
     Replace with LLAMA later.
     """
-    return f"[LLAMA output placeholder]\n\n{prompt}"
+    return f"[Model3 output placeholder]\n\n{prompt}"
 
 
 # -------- CHATGPT (stub / replace later) --------
@@ -41,4 +41,4 @@ def generate_chatgpt_output(prompt: str) -> str:
     Placeholder.
     Replace with OpenAI later.
     """
-    return f"[ChatGPT output placeholder]\n\n{prompt}"
+    return f"[Model2 output placeholder]\n\n{prompt}"

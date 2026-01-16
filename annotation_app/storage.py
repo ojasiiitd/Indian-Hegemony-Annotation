@@ -63,7 +63,7 @@ def extract_hegemony(form, prefix):
         ).strip()
 
         if present == "no" or impact == "" or impact.upper() == "NULL":
-            impact = None
+            impact = ""
 
         result[axis] = {
             "present": present,
@@ -78,7 +78,7 @@ def extract_hegemony(form, prefix):
 # =====================================================
 
 def build_record(form):
-    print("🪭🪭🪭🪭🪭🪭" , extract_hegemony(form, "gemini_base"))
+    print("BUILDING 🪭🪭🪭🪭🪭🪭 RECORD")
     return {
         "id": str(uuid.uuid4()),
         "timestamp": datetime.utcnow().isoformat(),
@@ -100,7 +100,8 @@ def build_record(form):
                 "identity": {
                     "text": form.get("gemini_identity_output"),
                     "hegemony": extract_hegemony(form, "gemini_identity")
-                }
+                },
+                "ground_truth": form.get("gemini_ground_truth")
             },
             "gpt": {
                 "base": {
@@ -110,7 +111,8 @@ def build_record(form):
                 "identity": {
                     "text": form.get("gpt_identity_output"),
                     "hegemony": extract_hegemony(form, "gpt_identity")
-                }
+                },
+                "ground_truth": form.get("gpt_ground_truth")
             },
             "llama": {
                 "base": {
@@ -120,13 +122,22 @@ def build_record(form):
                 "identity": {
                     "text": form.get("llama_identity_output"),
                     "hegemony": extract_hegemony(form, "llama_identity")
-                }
+                },
+                "ground_truth": form.get("llama_ground_truth")
             }
         },
-
-        "ground_truth": form.get("ground_truth"),
         "references": form.get("references", "")
     }
+
+# Sample Record
+# {'id': '6be846a7-6b72-4a2e-be59-16697d592778', 'timestamp': '2026-01-16T07:00:07.407092', 'region': 'South', 'state': 'Andhra Pradesh', 
+# 'prompts': {'base': 'sdfsgdh', 'identity': 'as a abc, sdfsgdh'}, 
+# 'outputs': 
+# {'gemini': 
+#   {'base': 
+#       {'text': '[Model1 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 
+#       'hegemony': {'social': {'present': 'yes', 'impact': 's1'}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 
+#   'identity': {'text': '[Model1 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'yes', 'impact': 's1'}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': '1'}, 'gpt': {'base': {'text': '[Model2 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'yes', 'impact': 'e1'}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'identity': {'text': '[Model2 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'yes', 'impact': 'e1'}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': None}, 'llama': {'base': {'text': '[Model3 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'yes', 'impact': 'r1'}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'identity': {'text': '[Model3 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'yes', 'impact': 'r1'}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': '3'}}, 'references': '123'}
 
 
 # =====================================================
@@ -150,11 +161,13 @@ def json_to_row(record):
         record["prompts"]["identity"],
     ])
 
-    def append_block(block):
+    def append_output(block):
         """
         block = {
           "text": "...",
-          "hegemony": { axis: {present, impact}, ... }
+          "hegemony": {
+              axis: { "present": "yes/no", "impact": str|None }
+          }
         }
         """
         row.append(block["text"])
@@ -162,22 +175,22 @@ def json_to_row(record):
             row.append(block["hegemony"][axis]["present"])
             row.append(block["hegemony"][axis]["impact"])
 
-    # === GEMINI ===
-    append_block(record["outputs"]["gemini"]["base"])
-    append_block(record["outputs"]["gemini"]["identity"])
+    # ========= GEMINI =========
+    append_output(record["outputs"]["gemini"]["base"])
+    append_output(record["outputs"]["gemini"]["identity"])
+    row.append(record["outputs"]["gemini"]["ground_truth"])
 
-    # === GPT ===
-    append_block(record["outputs"]["gpt"]["base"])
-    append_block(record["outputs"]["gpt"]["identity"])
+    # ========= GPT =========
+    append_output(record["outputs"]["gpt"]["base"])
+    append_output(record["outputs"]["gpt"]["identity"])
+    row.append(record["outputs"]["gpt"]["ground_truth"])
 
-    # === LLAMA ===
-    append_block(record["outputs"]["llama"]["base"])
-    append_block(record["outputs"]["llama"]["identity"])
+    # ========= LLAMA =========
+    append_output(record["outputs"]["llama"]["base"])
+    append_output(record["outputs"]["llama"]["identity"])
+    row.append(record["outputs"]["llama"]["ground_truth"])
 
-    # --- ground truth ---
-    row.extend([
-        record["ground_truth"],
-        record["references"],
-    ])
+    # --- references ---
+    row.append(record["references"])
 
     return row

@@ -14,10 +14,10 @@ All submitted records (latest first).
 {% for r in records %}
 <div class="box">
 
-  <!-- HEADER -->
-  <div class="columns is-mobile">
+  <!-- ================= HEADER ================= -->
+  <div class="columns is-vcentered">
     <div class="column">
-      <strong>ID:</strong> {{ r.id }}<br>
+      <strong>ID:</strong> {{ r.id }} <br>
       <strong>Region:</strong> {{ r.region }} — {{ r.state }}
     </div>
     <div class="column has-text-right">
@@ -27,57 +27,87 @@ All submitted records (latest first).
 
   <hr>
 
-  <!-- PROMPTS -->
-  <h3 class="has-text-weight-semibold">Prompts</h3>
-  <div class="columns is-variable is-6">
-    <div class="column">
-      <strong>Base Prompt</strong>
-      <pre class="wrapped-pre">{{ r.prompts.base }}</pre>
-    </div>
-    <div class="column">
-      <strong>Identity-Primed Prompt</strong>
-      <pre class="wrapped-pre">{{ r.prompts.identity }}</pre>
-    </div>
-  </div>
+  <!-- ================= PROMPTS ================= -->
+  <h3 class="title is-6">Prompts</h3>
+
+  <table class="table is-fullwidth is-bordered is-size-7">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Text</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Base</strong></td>
+        <td><pre class="wrapped-pre">{{ r.prompts.base }}</pre></td>
+      </tr>
+      <tr>
+        <td><strong>Identity</strong></td>
+        <td><pre class="wrapped-pre">{{ r.prompts.identity }}</pre></td>
+      </tr>
+    </tbody>
+  </table>
 
   <hr>
 
-  <!-- MODEL OUTPUTS -->
+  <!-- ================= MODEL OUTPUTS ================= -->
   {% for model, model_data in r.outputs.items() %}
-    {% set idx = loop.index %}
-    <h3 class="has-text-weight-semibold">Model {{ idx }} Outputs</h3>
+  {% set idx = loop.index %}
+    <h3 class="title is-6">
+      Model {{ idx }} Outputs
+    </h3>
 
-    <div class="columns is-variable is-6">
+    <table class="table is-fullwidth is-bordered is-size-7">
+      <thead>
+        <tr>
+          <th>Prompt</th>
+          <th>Output</th>
+          <th>Hegemony Summary</th>
+        </tr>
+      </thead>
+      <tbody>
 
-      {% for kind in ["base", "identity"] %}
-      <div class="column">
-        <strong>{{ kind|capitalize }} Prompt</strong>
-        <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
+        {% for kind in ["base", "identity"] %}
+        <tr>
+          <td><strong>{{ kind|capitalize }}</strong></td>
 
-        <ul>
-          {% for axis, data in model_data[kind].hegemony.items() %}
-            <li>
-              {{ axis|capitalize }}: {{ data.present }}
-              {% if data.impact is not none %}
-                – {{ data.impact }}
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      </div>
-      {% endfor %}
+          <td>
+            <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
+          </td>
 
-    </div>
+          <td>
+            <ul>
+              {% for axis, data in model_data[kind].hegemony.items() %}
+                <li>
+                  {{ axis|capitalize }}: {{ data.present }}
+                  {% if data.present == "yes" and data.impact %}
+                    – {{ data.impact }}
+                  {% endif %}
+                </li>
+              {% endfor %}
+            </ul>
+          </td>
+        </tr>
+        {% endfor %}
+
+      </tbody>
+    </table>
+
+    <!-- ===== Model-specific Ground Truth ===== -->
+    {% if model_data.ground_truth %}
+      <p class="mt-2">
+        <strong>Model {{ idx }} Ground Truth</strong>
+      </p>
+      <pre class="wrapped-pre">{{ model_data.ground_truth }}</pre>
+    {% endif %}
 
     <hr>
   {% endfor %}
 
-  <!-- GROUND TRUTH -->
-  <h4 class="has-text-weight-semibold">Ground Truth</h4>
-  <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
-
+  <!-- ================= REFERENCES ================= -->
   {% if r.references %}
-    <h4 class="has-text-weight-semibold mt-3">References</h4>
+    <h4 class="title is-6">References</h4>
     <pre class="wrapped-pre">{{ r.references }}</pre>
   {% endif %}
 

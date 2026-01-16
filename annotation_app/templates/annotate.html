@@ -9,18 +9,13 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
 
 <form method="POST">
 
-  <!-- ================================================= -->
   <!-- REGION / STATE -->
-  <!-- ================================================= -->
   {% include "components/region_state.html" %}
 
   <hr>
 
-  <!-- ================================================= -->
   <!-- PROMPTS (SHARED ACROSS MODELS) -->
-  <!-- ================================================= -->
   <div class="columns is-variable is-6">
-
     <div class="column">
       <label class="label">Base Prompt</label>
       <textarea class="textarea"
@@ -36,193 +31,71 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
                 rows="3"
                 required>{{ draft.prompts.identity if draft }}</textarea>
     </div>
-
   </div>
 
   <hr>
 
-  <!-- ================================================= -->
-  <!-- GEMINI MODEL -->
-  <!-- ================================================= -->
-  <h2 class="title is-4">Model 1</h2>
+  {% set models = [
+    {"key": "gemini", "js": "gemini",  "label": "Model 1"},
+    {"key": "gpt",    "js": "chatgpt", "label": "Model 2"},
+    {"key": "llama",  "js": "llama",   "label": "Model 3"}
+  ] %}
 
-  <div class="columns is-variable is-6">
+  <!-- MODELS LOOP -->
+  {% for m in models %}
+    <h2 class="title is-4">{{ m.label }}</h2>
 
-    <!-- GEMINI BASE -->
-    <div class="column">
+    <div class="columns is-variable is-6">
 
-      <button type="button"
-              class="button is-dark mb-3"
-              onclick="generateOutput('gemini','base')">
-        Generate
-      </button>
+      {% for kind in ["base", "identity"] %}
+      <div class="column">
 
-      <textarea class="textarea"
-          id="gemini_llm_output_base"
-          name="gemini_base_output"
-          rows="15"
-          readonly
-          required>{{ draft.outputs.gemini.base.text if draft }}</textarea>
+        <button type="button"
+                class="button is-dark mb-3"
+                onclick="generateOutput('{{ m.js }}','{{ kind }}')">
+          Generate
+        </button>
 
-      {% with model="gemini" , kind="base" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
+        <textarea class="textarea"
+                  id="{{ m.js }}_llm_output_{{ kind }}"
+                  name="{{ m.key }}_{{ kind }}_output"
+                  rows="15"
+                  readonly>
+{{ draft.outputs[m.key][kind].text if draft }}
+        </textarea>
+
+        {% with model=m.key, kind=kind %}
+          {% include "components/hegemony_axes.html" %}
+        {% endwith %}
+
+      </div>
+      {% endfor %}
+
     </div>
 
-    <!-- GEMINI IDENTITY -->
-    <div class="column">
-
-      <button type="button"
-              class="button is-dark mb-3"
-              onclick="generateOutput('gemini','identity')">
-        Generate
-      </button>
-
-      <textarea class="textarea"
-          id="gemini_llm_output_identity"
-          name="gemini_identity_output"
-          rows="15"
-          readonly>{{ draft.outputs.gemini.identity.text if draft }}</textarea>
-
-      {% with model="gemini" , kind="identity" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
-    </div>
-
-  </div>
-
-  <hr>
-
-  <!-- ================================================= -->
-  <!-- GPT MODEL -->
-  <!-- ================================================= -->
-  <h2 class="title is-4">Model 2</h2>
-
-  <div class="columns is-variable is-6">
-
-    <!-- GPT BASE -->
-    <div class="column">
-
-      <button type="button"
-              class="button is-link mb-3"
-              onclick="generateOutput('chatgpt','base')">
-        Generate
-      </button>
-
-      <textarea class="textarea"
-          id="chatgpt_llm_output_base"
-          name="gpt_base_output"
-          rows="15"
-          readonly>{{ draft.outputs.gpt.base.text if draft }}</textarea>
-
-      {% with model="gpt" , kind="base" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
-    </div>
-
-    <!-- GPT IDENTITY -->
-    <div class="column">
-
-      <button type="button"
-              class="button is-link mb-3"
-              onclick="generateOutput('chatgpt','identity')">
-        Generate
-      </button>
-
-      <textarea class="textarea"
-          id="chatgpt_llm_output_identity"
-          name="gpt_identity_output"
-          rows="15"
-          readonly>{{ draft.outputs.gpt.identity.text if draft }}</textarea>
-
-      {% with model="gpt" , kind="identity" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
-    </div>
-
-  </div>
-
-  <hr>
-
-  <!-- ================================================= -->
-  <!-- LLama MODEL -->
-  <!-- ================================================= -->
-  <h2 class="title is-4">Model 3</h2>
-
-  <div class="columns is-variable is-6">
-
-    <!-- LLama BASE -->
-    <div class="column">
-
-      <button type="button"
-              class="button is-warning mb-3"
-              onclick="generateOutput('llama','base')">
-        Generate
-      </button>
-
-      <textarea class="textarea"
-          id="llama_llm_output_base"
-          name="llama_base_output"
-          rows="15"
-          readonly>{{ draft.outputs.llama.base.text if draft }}</textarea>
-
-      {% with model="llama" , kind="base" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
-    </div>
-
-    <!-- LLama IDENTITY -->
-    <div class="column">
-
-      <button type="button"
-              class="button is-warning mb-3"
-              onclick="generateOutput('llama','identity')">
-        Generate
-      </button>
-
-      <textarea class="textarea"
-          id="llama_llm_output_identity"
-          name="llama_identity_output"
-          rows="15"
-          readonly>{{ draft.outputs.llama.identity.text if draft }}</textarea>
-
-      {% with model="llama" , kind="identity" %}
-        {% include "components/hegemony_axes.html" %}
-      {% endwith %}
-    </div>
-
-  </div>
-
-  <hr>
-  <!-- ================================================= -->
   <!-- GROUND TRUTH -->
-  <!-- ================================================= -->
   <div class="field">
     <label class="label">Ground Truth (100–200 words)</label>
-    <div class="content is-small">
-      <p>
-        Provide a contextually grounded, non-hegemonic description informed by sociological knowledge
-        and everyday practices. The goal is <strong>meaningful correction, not perfection</strong>.
-      </p>
-    </div>
     <textarea class="textarea"
-              name="ground_truth"
+              name="{{ m.js }}_ground_truth"
               rows="15"
-              required>{{ draft.ground_truth if draft }}</textarea>
+              required>{{ draft.outputs[m.key].ground_truth if draft }}</textarea>
   </div>
+
+    <hr>
+  {% endfor %}
 
   <!-- REFERENCES -->
   <div class="field">
     <label class="label">References (links only)</label>
     <textarea class="textarea"
               name="references"
-              rows="3"
-              placeholder="Paste URLs, one per line">{{ draft.references if draft }}</textarea>
+              rows="3">{{ draft.references if draft }}</textarea>
   </div>
 
   <!-- SUBMIT -->
   <div class="field has-text-right">
-    <button class="button is-info is-large" type="submit">
+    <button class="button is-info is-medium" type="submit">
       Review Annotation →
     </button>
   </div>
