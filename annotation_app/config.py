@@ -1,4 +1,5 @@
-import os
+from werkzeug.security import generate_password_hash
+import json
 
 DATA_FILE = "data/annotations.jsonl"
 
@@ -22,7 +23,10 @@ HEGEMONY_AXES = [
 SHEET_NAME = "json-to-sheets-hegemony"
 
 GOOGLE_CREDS_PATH = "annotation_app/accounts/google_creds.json"
+
 API_KEYS_PATH = "annotation_app/accounts/apikeys.json"
+with open(API_KEYS_PATH, "r") as f:
+    KEYS = json.load(f)
 
 HEADERS = [
     # --- metadata ---

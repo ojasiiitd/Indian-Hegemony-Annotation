@@ -1,19 +1,37 @@
 # app.py
 from flask import Flask, render_template, request, redirect, jsonify, url_for, abort
-from config import REGION_STATE_MAP, HEGEMONY_AXES
 from storage import *
 from sheets import *
 from flask import session
 import json
-import os
-from config import DATA_FILE
+from config import *
 from llm import *
 import secrets
+from werkzeug.security import check_password_hash, generate_password_hash
+from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
+def login_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if "user" not in session:
+            return redirect(url_for("login"))
+        return f(*args, **kwargs)
+    return wrapper
+
+def admin_required(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        user = session.get("user")
+        if not user or user["role"] != "admin":
+            abort(403)
+        return f(*args, **kwargs)
+    return wrapper
+
 @app.route("/", methods=["GET", "POST"])
+@login_required
 def annotate():
     if request.method == "POST":
         record = build_record(request.form)
@@ -35,6 +53,7 @@ def annotate():
     )
 
 @app.route("/freshannotate", methods=["GET", "POST"])
+@login_required
 def freshannotate():
     # Retrieve and discard draft
     session.pop("draft_record", None)
@@ -42,6 +61,7 @@ def freshannotate():
 
 
 @app.route("/confirm", methods=["POST"])
+@login_required
 def confirm():
     # Retrieve and discard draft in one step
     record = session.pop("draft_record", None)
@@ -62,6 +82,7 @@ def confirm():
     return redirect("/")
 
 @app.route("/records")
+@admin_required
 def records():
     records = load_records()
     # show newest first
@@ -69,12 +90,14 @@ def records():
     return render_template("records.html", records=records)
 
 @app.route("/admin")
+@admin_required
 def admin():
     records = load_records()
     return render_template("admin.html", records=records)
 
 
 @app.route("/admin/delete", methods=["POST"])
+@admin_required
 def admin_delete():
     print("💀 admin_delete called")
     delete_ids = request.form.getlist("delete_ids")
@@ -149,6 +172,43 @@ def generate_deepseek():
 @app.route("/references")
 def references():
     return render_template("references.html")
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        # ---- ADMIN LOGIN ----
+        if (
+            username == KEYS["ADMIN_USERNAME"] and
+            check_password_hash(KEYS["ADMIN_PASSWORD_HASH"], password)
+        ):
+            session["user"] = {
+                "username": username,
+                "role": "admin"
+            }
+            return redirect(url_for("annotate"))
+
+        # ---- ANNOTATOR LOGIN ----
+        if (
+            username == KEYS["ANNOTATOR_USERNAME"] and
+            check_password_hash(KEYS["ANNOTATOR_PASSWORD_HASH"], password)
+        ):
+            session["user"] = {
+                "username": username,
+                "role": "annotator"
+            }
+            return redirect(url_for("annotate"))
+
+        return render_template("login.html", error="Invalid credentials")
+
+    return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 if __name__ == "__main__":
     app.run(debug=True)

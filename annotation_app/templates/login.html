@@ -1,0 +1,45 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<section class="section is-flex is-align-items-center is-justify-content-center">
+
+  <div class="box" style="width: 500px;">
+
+    <h1 class="has-text-dark is-size-3">Login</h1>
+
+    {% if error %}
+      <div class="notification is-danger is-light">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="POST">
+
+      <div class="field">
+        <label class="label">Username</label>
+        <div class="control">
+          <input class="input" type="text" name="username" required autofocus>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label">Password</label>
+        <div class="control">
+          <input class="input" type="password" name="password" required>
+        </div>
+      </div>
+
+      <div class="field mt-4">
+        <button class="button is-dark is-fullwidth" type="submit">
+          Login
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endblock %}

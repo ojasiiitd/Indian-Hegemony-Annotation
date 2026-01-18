@@ -9,6 +9,16 @@
 
   {% block styles %}
     <style>
+    html, body {
+        min-height: 100%;
+    }
+    .box {
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    }
+
+    body.login-page {
+        background: linear-gradient(135deg, #dbe4ff, #f8f9ff);
+    }
     .wrapped-pre {
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -20,7 +30,7 @@
     border: 1px solid #e6e8f0;
     }
     body {
-        background-color: #c5d0f0;
+        background-color: #d9d9d9;
     }
 
     /* Main container */
@@ -122,7 +132,7 @@
   {% endblock %}
 </head>
 
-<body>
+<body class="{% if request.endpoint == 'login' %}login-page{% endif %}">
     <nav class="navbar is-link mb-5" role="navigation">
     <div class="navbar-brand">
         <a class="navbar-item has-text-weight-bold">
@@ -132,21 +142,46 @@
 
     <div class="navbar-menu">
         <div class="navbar-start">
-        <a class="navbar-item" href="/freshannotate">
-            Annotate
-        </a>
+
         <a class="navbar-item" href="/references">
             References
         </a>
-        <a class="navbar-item" href="/records">
-            Show Records
+
+
+        <!-- Visible to ALL logged-in users -->
+        <a class="navbar-item" href="/freshannotate">
+            Annotate
         </a>
-        <a class="navbar-item" href="/admin">
+
+        <!-- Admin-only links -->
+        {% if session.get("user") and session["user"]["role"] == "admin" %}
+            <a class="navbar-item" href="/records">
+                Show Records
+            </a>
+
+            <a class="navbar-item" href="/admin">
             Admin
-        </a>
+            </a>
+
+        {% endif %}
+
+        </div>
+
+        <div class="navbar-end">
+        {% if session.get("user") %}
+            <div class="navbar-item">
+            <span class="mr-2 is-size-6 has-text-warning">
+                {{ session["user"]["username"] }}
+            </span>
+            <a class="button is-light is-small" href="{{ url_for('logout') }}">
+                Logout
+            </a>
+            </div>
+        {% endif %}
         </div>
     </div>
     </nav>
+
   <div class="container">
     {% block content %}{% endblock %}
   </div>

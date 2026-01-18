@@ -1,13 +1,11 @@
 import json
 from google import genai
 from google.genai import types
-from config import API_KEYS_PATH
+from config import KEYS
 
-with open(API_KEYS_PATH, "r") as f:
-    keys = json.load(f)
 
 # -------- GEMINI --------
-_gemini_client = genai.Client(api_key=keys["GEMINI_API_KEY"])
+_gemini_client = genai.Client(api_key=KEYS["GEMINI_API_KEY"])
 
 # def generate_gemini_output(prompt: str) -> str:
 #     response = _gemini_client.models.generate_content(
@@ -19,6 +17,7 @@ _gemini_client = genai.Client(api_key=keys["GEMINI_API_KEY"])
 #         )
 #     )
 #     return response.text
+
 def generate_gemini_output(prompt: str) -> str:
     """
     Placeholder.
