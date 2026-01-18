@@ -28,6 +28,7 @@ HEADERS = [
     # --- metadata ---
     "id",
     "timestamp",
+    "annotator_name"
     "region",
     "state",
 
@@ -130,6 +131,38 @@ HEADERS = [
     "llama_identity_colorism_impact",
 
     "llama_ground_truth",
+
+    # === DEEPSEEK BASE ===
+    "deepseek_base_output",
+    "deepseek_base_social",
+    "deepseek_base_social_impact",
+    "deepseek_base_economic",
+    "deepseek_base_economic_impact",
+    "deepseek_base_religious",
+    "deepseek_base_religious_impact",
+    "deepseek_base_gender",
+    "deepseek_base_gender_impact",
+    "deepseek_base_linguistic",
+    "deepseek_base_linguistic_impact",
+    "deepseek_base_colorism",
+    "deepseek_base_colorism_impact",
+
+    # === DEEPSEEK IDENTITY ===
+    "deepseek_identity_output",
+    "deepseek_identity_social",
+    "deepseek_identity_social_impact",
+    "deepseek_identity_economic",
+    "deepseek_identity_economic_impact",
+    "deepseek_identity_religious",
+    "deepseek_identity_religious_impact",
+    "deepseek_identity_gender",
+    "deepseek_identity_gender_impact",
+    "deepseek_identity_linguistic",
+    "deepseek_identity_linguistic_impact",
+    "deepseek_identity_colorism",
+    "deepseek_identity_colorism_impact",
+
+    "deepseek_ground_truth",
 
     # --- references ---
     "references",

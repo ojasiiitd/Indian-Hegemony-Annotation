@@ -1,19 +1,38 @@
 <div class="columns">
+
+  <!-- NAME -->
+  <div class="column">
+    <label class="label">Name</label>
+    <div class="control">
+      <input class="input"
+             type="text"
+             name="annotator_name"
+             placeholder="Enter your name"
+             required
+             value="{{ draft.annotator_name if draft }}">
+    </div>
+  </div>
+
+  <!-- REGION -->
   <div class="column">
     <label class="label">Region</label>
     <div class="control select is-fullwidth">
-      <select id="region" name="region" required onchange="updateState()">
+      <select id="region"
+              name="region"
+              required
+              onchange="updateState()">
         <option value="">Select region</option>
         {% for region in region_state_map.keys() %}
-            <option value="{{ region }}"
-                {% if draft and draft.region == region %}selected{% endif %}>
-                {{ region }}
-            </option>
+          <option value="{{ region }}"
+            {% if draft and draft.region == region %}selected{% endif %}>
+            {{ region }}
+          </option>
         {% endfor %}
       </select>
     </div>
   </div>
 
+  <!-- STATE -->
   <div class="column">
     <label class="label">State</label>
     <div class="control select is-fullwidth">
@@ -22,4 +41,5 @@
       </select>
     </div>
   </div>
+
 </div>

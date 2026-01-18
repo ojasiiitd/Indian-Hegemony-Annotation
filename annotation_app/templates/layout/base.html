@@ -20,7 +20,7 @@
     border: 1px solid #e6e8f0;
     }
     body {
-        background-color: #f7f8fb;
+        background-color: #c5d0f0;
     }
 
     /* Main container */
@@ -108,15 +108,25 @@
     .content.is-small {
         color: #5f647d;
     }
+
+    .equal-height {
+        display: flex;
+    }
+
+    .equal-height .box {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
     </style>
   {% endblock %}
 </head>
 
 <body>
-    <nav class="navbar is-dark mb-5" role="navigation">
+    <nav class="navbar is-link mb-5" role="navigation">
     <div class="navbar-brand">
-        <a class="navbar-item has-text-weight-semibold">
-        Cultural Hegemony Annotation
+        <a class="navbar-item has-text-weight-bold">
+        Annotating Begumpura
         </a>
     </div>
 
@@ -124,6 +134,9 @@
         <div class="navbar-start">
         <a class="navbar-item" href="/freshannotate">
             Annotate
+        </a>
+        <a class="navbar-item" href="/references">
+            References
         </a>
         <a class="navbar-item" href="/records">
             Show Records

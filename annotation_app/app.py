@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, jsonify, url_for
+from flask import Flask, render_template, request, redirect, jsonify, url_for, abort
 from config import REGION_STATE_MAP, HEGEMONY_AXES
 from storage import *
 from sheets import *
@@ -76,10 +76,11 @@ def admin():
 
 @app.route("/admin/delete", methods=["POST"])
 def admin_delete():
+    print("💀 admin_delete called")
     delete_ids = request.form.getlist("delete_ids")
 
-    if not delete_ids:
-        return redirect(url_for("admin"))
+    # if not delete_ids:
+    #     return redirect(url_for("admin"))
 
     records = load_records()
 
@@ -88,6 +89,8 @@ def admin_delete():
 
     # Rewrite JSONL
     rewrite_jsonl(remaining)
+
+    clear_sheet_data()
 
     # Rebuild Google Sheet
     try:
@@ -110,8 +113,8 @@ def generate_gemini():
     return jsonify({"text": generate_gemini_output(prompt)})
 
 
-@app.route("/generate/chatgpt", methods=["POST"])
-def generate_chatgpt():
+@app.route("/generate/gpt", methods=["POST"])
+def generate_gpt():
     print("😋 Chat  GPT called")
     data = request.json
     prompt = data.get("prompt", "").strip()
@@ -119,7 +122,7 @@ def generate_chatgpt():
     if not prompt:
         return jsonify({"error": "Empty prompt"}), 400
 
-    return jsonify({"text": generate_chatgpt_output(prompt)})
+    return jsonify({"text": generate_gpt_output(prompt)})
 
 @app.route("/generate/llama", methods=["POST"])
 def generate_llama():
@@ -131,6 +134,21 @@ def generate_llama():
         return jsonify({"error": "Empty prompt"}), 400
 
     return jsonify({"text": generate_llama_output(prompt)})
+
+@app.route("/generate/deepseek", methods=["POST"])
+def generate_deepseek():
+    print("😋 Deepseek called")
+    data = request.json
+    prompt = data.get("prompt", "").strip()
+
+    if not prompt:
+        return jsonify({"error": "Empty prompt"}), 400
+
+    return jsonify({"text": generate_deepseek_output(prompt)})
+
+@app.route("/references")
+def references():
+    return render_template("references.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

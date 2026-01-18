@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h1 class="title">Cultural Hegemony Annotation</h1>
+<h1 class="title">Annotation Task</h1>
 <p class="subtitle">
 This task evaluates cultural hegemony in LLM-generated responses across Indian States.
 </p>
@@ -37,8 +37,9 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
 
   {% set models = [
     {"key": "gemini", "js": "gemini",  "label": "Model 1"},
-    {"key": "gpt",    "js": "chatgpt", "label": "Model 2"},
-    {"key": "llama",  "js": "llama",   "label": "Model 3"}
+    {"key": "gpt",    "js": "gpt", "label": "Model 2"},
+    {"key": "llama",  "js": "llama",   "label": "Model 3"},
+    {"key": "deepseek",  "js": "deepseek",   "label": "Model 4"}
   ] %}
 
   <!-- MODELS LOOP -->
@@ -50,7 +51,8 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
       {% for kind in ["base", "identity"] %}
       <div class="column">
 
-        <button type="button"
+        <button id="{{ m }}_generate_btn"
+                type="button"
                 class="button is-dark mb-3"
                 onclick="generateOutput('{{ m.js }}','{{ kind }}')">
           Generate
@@ -98,6 +100,7 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
     <button class="button is-info is-medium" type="submit">
       Review Annotation →
     </button>
+    <hr>
   </div>
 
 </form>

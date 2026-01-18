@@ -45,7 +45,11 @@ def extract_hegemony(form, prefix):
       - gemini_base
       - gemini_identity
       - gpt_base
+      - gpt_identity
+      - llama_base
       - llama_identity
+      - deepseek_base
+      - deepseek_identity
     """
 
     result = {}
@@ -83,6 +87,7 @@ def build_record(form):
         "id": str(uuid.uuid4()),
         "timestamp": datetime.utcnow().isoformat(),
 
+        "annotator_name": form["annotator_name"],
         "region": form["region"],
         "state": form["state"],
 
@@ -124,6 +129,17 @@ def build_record(form):
                     "hegemony": extract_hegemony(form, "llama_identity")
                 },
                 "ground_truth": form.get("llama_ground_truth")
+            },
+            "deepseek": {
+                "base": {
+                    "text": form.get("deepseek_base_output"),
+                    "hegemony": extract_hegemony(form, "deepseek_base")
+                },
+                "identity": {
+                    "text": form.get("deepseek_identity_output"),
+                    "hegemony": extract_hegemony(form, "deepseek_identity")
+                },
+                "ground_truth": form.get("deepseek_ground_truth")
             }
         },
         "references": form.get("references", "")
@@ -151,6 +167,7 @@ def json_to_row(record):
     row.extend([
         record["id"],
         record["timestamp"],
+        record["annotator_name"],
         record["region"],
         record["state"],
     ])
@@ -189,6 +206,12 @@ def json_to_row(record):
     append_output(record["outputs"]["llama"]["base"])
     append_output(record["outputs"]["llama"]["identity"])
     row.append(record["outputs"]["llama"]["ground_truth"])
+    
+    # ========= DeepSeek =========
+    append_output(record["outputs"]["deepseek"]["base"])
+    append_output(record["outputs"]["deepseek"]["identity"])
+    row.append(record["outputs"]["deepseek"]["ground_truth"])
+
 
     # --- references ---
     row.append(record["references"])

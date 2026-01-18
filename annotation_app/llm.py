@@ -36,9 +36,16 @@ def generate_llama_output(prompt: str) -> str:
 
 
 # -------- CHATGPT (stub / replace later) --------
-def generate_chatgpt_output(prompt: str) -> str:
+def generate_gpt_output(prompt: str) -> str:
     """
     Placeholder.
     Replace with OpenAI later.
     """
     return f"[Model2 output placeholder]\n\n{prompt}"
+
+def generate_deepseek_output(prompt: str) -> str:
+    """
+    Placeholder.
+    Replace with Deepseek later.
+    """
+    return f"[Model4 output placeholder]\n\n{prompt}"
