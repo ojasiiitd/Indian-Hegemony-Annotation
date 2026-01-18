@@ -23,6 +23,8 @@ def append_row(row: list):
     Minimal change, defensive, schema-safe.
     """
 
+    print("✖️✖️✖️✖️✖️ APPEND ROW SHEETS CALLED")
+
     # ---------------------------
     # 1. Schema safety check
     # ---------------------------

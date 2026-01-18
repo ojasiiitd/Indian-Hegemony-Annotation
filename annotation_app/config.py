@@ -28,7 +28,7 @@ HEADERS = [
     # --- metadata ---
     "id",
     "timestamp",
-    "annotator_name"
+    "annotator_name",
     "region",
     "state",
 

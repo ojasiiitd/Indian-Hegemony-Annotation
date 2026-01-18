@@ -14,7 +14,6 @@ def write_jsonl(record):
     with open(DATA_FILE, "a", encoding="utf-8") as f:
         f.write(json.dumps(record, ensure_ascii=False) + "\n")
 
-
 def rewrite_jsonl(records):
     with open(DATA_FILE, "w", encoding="utf-8") as f:
         for r in records:
