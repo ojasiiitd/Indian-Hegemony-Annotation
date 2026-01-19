@@ -11,7 +11,14 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
 
 app = Flask(__name__)
-app.secret_key = secrets.token_hex(32)
+app.secret_key = KEYS["FLASK_SECRET_KEY"]
+
+@app.before_request
+def validate_session():
+    try:
+        _ = session.get("user")
+    except Exception:
+        session.clear()
 
 def login_required(f):
     @wraps(f)
