@@ -132,6 +132,7 @@ def admin_delete():
 
 
 @app.route("/generate/gemini", methods=["POST"])
+@login_required
 def generate_gemini():
     print("😋 GEMINI called")
     data = request.json
@@ -144,6 +145,7 @@ def generate_gemini():
 
 
 @app.route("/generate/gpt", methods=["POST"])
+@login_required
 def generate_gpt():
     print("😋 Chat  GPT called")
     data = request.json
@@ -155,6 +157,7 @@ def generate_gpt():
     return jsonify({"text": generate_gpt_output(prompt)})
 
 @app.route("/generate/llama", methods=["POST"])
+@login_required
 def generate_llama():
     print("😋 Llama called")
     data = request.json
@@ -166,6 +169,7 @@ def generate_llama():
     return jsonify({"text": generate_llama_output(prompt)})
 
 @app.route("/generate/deepseek", methods=["POST"])
+@login_required
 def generate_deepseek():
     print("😋 Deepseek called")
     data = request.json
@@ -218,4 +222,4 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run()
