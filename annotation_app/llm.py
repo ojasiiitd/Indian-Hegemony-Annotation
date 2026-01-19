@@ -3,7 +3,6 @@ from google import genai
 from google.genai import types
 from config import KEYS
 
-
 # -------- GEMINI --------
 _gemini_client = genai.Client(api_key=KEYS["GEMINI_API_KEY"])
 

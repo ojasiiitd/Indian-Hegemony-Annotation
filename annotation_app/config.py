@@ -1,7 +1,7 @@
 from werkzeug.security import generate_password_hash
 import json
 
-DATA_FILE = "data/annotations.jsonl"
+DATA_FILE = "annotation_app/static/annotations.jsonl"
 
 REGION_STATE_MAP = {
     "East": "West Bengal",
