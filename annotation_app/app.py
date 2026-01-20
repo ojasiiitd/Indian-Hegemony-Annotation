@@ -66,6 +66,10 @@ def freshannotate():
     session.pop("draft_record", None)
     return redirect("/")
 
+@app.route("/examples")
+def examples():
+    return render_template("examples.html")
+
 
 @app.route("/confirm", methods=["POST"])
 @login_required
@@ -222,4 +226,4 @@ def logout():
     return redirect(url_for("login"))
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

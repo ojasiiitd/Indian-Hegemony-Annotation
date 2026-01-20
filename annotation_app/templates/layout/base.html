@@ -148,13 +148,14 @@
         <a class="navbar-item" href="/references">
             References
         </a>
-
+        <a class="navbar-item" href="/examples">
+            Examples
+        </a>
 
         <!-- Visible to ALL logged-in users -->
         <a class="navbar-item" href="/freshannotate">
             Annotate
         </a>
-
         <!-- Admin-only links -->
         {% if session.get("user") and session["user"]["role"] == "admin" %}
             <a class="navbar-item" href="/records">

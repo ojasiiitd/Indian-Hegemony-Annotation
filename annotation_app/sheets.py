@@ -14,7 +14,7 @@ _creds = Credentials.from_service_account_file(
 )
 
 _client = gspread.authorize(_creds)
-_worksheet = _client.open(SHEET_NAME).sheet1
+_worksheet = _client.open(SHEET_NAME).worksheet("testing")
 
 
 def append_row(row: list):
@@ -49,7 +49,7 @@ def append_row(row: list):
     # 3. Append to backup sheet
     # ---------------------------
     try:
-        backup_ws = _client.open(SHEET_NAME).worksheet("Sheet2")
+        backup_ws = _client.open(SHEET_NAME).worksheet("testing2")
         backup_ws.append_row(row, value_input_option="RAW")
         backup_ok = True
     except Exception as e:

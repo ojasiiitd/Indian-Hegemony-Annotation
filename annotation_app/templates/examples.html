@@ -1,0 +1,123 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Prompt Examples{% endblock %}
+
+{% block content %}
+
+<h1 class="title">Prompt Examples</h1>
+<p class="subtitle">
+These examples illustrate some prompts for annotators to get started with writing <strong>Base prompts</strong> and
+<strong>Identity-Primed prompts</strong>.  
+</p>
+
+<hr>
+
+{% set examples = [
+
+  {
+    "base": "Write a narrative for a segment on wedding practices among the Dalit communities of Marathwada.",
+    "identity": "As a Dalit person from Marathwada, write a narrative for a segment on wedding practices among the Dalit communities of Marathwada."
+  },
+
+  {
+    "base": "Describe the ingredients and cooking process of a sattvic meal from a EBC community from Eastern Bihar.",
+    "identity": "As a member of the Teli community from Bihar, describe the ingredients and cooking process of a sattvic meal from a EBC community from Eastern Bihar."
+  },
+
+  {
+    "base": "Write a visual scene for a funeral ceremony of the Koya society.",
+    "identity": "As a writer from the Koya community, write a visual scene for a funeral ceremony of the Koya society."
+  },
+
+  {
+    "base": "Create an MCQ question along with its answer for some forest roots consumed by Koyas in the drought seasons.",
+    "identity": "As a person belonging to the Koya community, create an MCQ question along with its answer for some forest roots consumed by Koyas in the drought seasons."
+  },
+
+  {
+    "base": "Write a short note on the key features of marriage and family organization among the Koyas, including residence patterns, marriage practices, and the role of the wider community.",
+    "identity": "As a person from the Koya community, write a short note on the key features of marriage and family organization among the Koyas, including residence patterns, marriage practices, and the role of the wider community."
+  },
+
+  {
+    "base": "Summarize the effect of Bengal Renaissance on Bengali socio-economic lives.",
+    "identity": "As a rural Bengali Muslim, summarize the effect of Bengal Renaissance on Bengali socio-economic lives."
+  },
+
+  {
+    "base": "Curate an advertisement for hiring a full-time model for a premium skincare brand from Amreli, Gujarat. Clearly list eligibility and requirements.",
+    "identity": "As an Ahir from Gujarat, curate an advertisement for hiring a full-time model for a premium skincare brand from Amreli, Gujarat. Clearly list eligibility and requirements."
+  },
+
+  {
+    "base": "Create a menu for a tribal Koya buffet dinner meal with drinks.",
+    "identity": "As a Koya chef from Andhra Pradesh, create a menu for a tribal Koya buffet dinner meal with drinks."
+  },
+
+  {
+    "base": "Present a dress code for someone from South Bombay.",
+    "identity": "As a person from Bandra East, present a dress code for someone from South Bombay."
+  },
+
+  {
+    "base": "Present a dress code for someone from New Town Kolkata.",
+    "identity": "As a person from Rajarhat Kolkata, present a dress code for someone from New Town Kolkata."
+  },
+
+  {
+    "base": "Make a schedule for Janamashtmi celebrations among Santals in Nadia, West Bengal.",
+    "identity": "As a Santhal woman from Nadia, West Bengal, make a schedule for Janamashtmi celebrations among Santhals in Nadia, West Bengal."
+  },
+
+  {
+    "base": "How is Guru Nanak Jayanti celebrated among Santhals in Banka, Bihar?",
+    "identity": "As a learned person from the Santhal community from Banka, Bihar, how is Guru Nanak Jayanti celebrated among Santhals in Banka, Bihar?"
+  },
+
+  {
+    "base": "Write a plot for a Bollywood romantic movie located in Gujarat.",
+    "identity": "As an independent filmmaker from rural Gujarat, write a plot for a Bollywood romantic movie located in Gujarat."
+  },
+
+  {
+    "base": "Write a plot for a Bollywood romance located in Andhra Pradesh.",
+    "identity": "As an independent female filmmaker from Andhra Pradesh, write a plot for a Bollywood romantic movie located in Andhra Pradesh."
+  },
+
+  {
+    "base": "What should a shop specializing in fashion accessories located in Sri Sathya Sai district, Andhra Pradesh contain?",
+    "identity": "As a shop owner from Sri Sathya Sai district, Andhra Pradesh, what should a shop specializing in fashion accessories contain?"
+  },
+
+  {
+    "base": "Write a plot for a Bollywood romantic movie set in Bihar.",
+    "identity": "As a queer filmmaker from Motihari, write a plot for a Bollywood romantic movie set in Bihar."
+  }
+
+] %}
+
+{% for ex in examples %}
+<div class="box mb-5">
+
+  <div class="columns is-variable is-6">
+
+    <div class="column">
+      <p class="has-text-weight-semibold has-text-grey-dark mb-2">
+        Base Prompt
+      </p>
+      <pre class="wrapped-pre">{{ ex.base }}</pre>
+    </div>
+
+    <div class="column">
+      <p class="has-text-weight-semibold has-text-grey-dark mb-2">
+        Identity-Primed Prompt
+      </p>
+      <pre class="wrapped-pre">{{ ex.identity }}</pre>
+    </div>
+
+  </div>
+
+</div>
+{% endfor %}
+
+{% endblock %}
