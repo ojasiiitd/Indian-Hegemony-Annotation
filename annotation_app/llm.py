@@ -2,27 +2,32 @@ import json
 from google import genai
 from google.genai import types
 from config import KEYS
+from openai import OpenAI
 
-# -------- GEMINI --------
 _gemini_client = genai.Client(api_key=KEYS["GEMINI_API_KEY"])
+_gpt_client = OpenAI(api_key=KEYS["GPT_API_KEY"])
+# _llama_client = 
+# _deepseek_client = 
+
 
 # def generate_gemini_output(prompt: str) -> str:
-#     response = _gemini_client.models.generate_content(
-#         model="gemini-3-flash-preview",
-#         contents=[prompt],
-#         config=types.GenerateContentConfig(
-#             system_instruction="Answer in 100-200 words.",
-#             temperature=0.2
-#         )
-#     )
-#     return response.text
-
+#     """
+#     Placeholder.
+#     """
+#     return f"[Model1 output placeholder]\n\n{prompt}"
 def generate_gemini_output(prompt: str) -> str:
     """
-    Placeholder.
-    Replace with Gemini later.
+    Gemini Output Generator
     """
-    return f"[Model1 output placeholder]\n\n{prompt}"
+    response = _gemini_client.models.generate_content(
+        model="gemini-3-flash-preview",
+        contents=[prompt],
+        config=types.GenerateContentConfig(
+            system_instruction="Answer in 100-200 words.",
+            temperature=0.8
+        )
+    )
+    return response.text
 
 
 def generate_llama_output(prompt: str) -> str:
@@ -33,13 +38,26 @@ def generate_llama_output(prompt: str) -> str:
     return f"[Model3 output placeholder]\n\n{prompt}"
 
 
-# -------- CHATGPT (stub / replace later) --------
+# def generate_gpt_output(prompt: str) -> str:
+#     """
+#     Placeholder.
+#     """
+#     return f"[Model2 output placeholder]\n\n{prompt}"
 def generate_gpt_output(prompt: str) -> str:
     """
-    Placeholder.
-    Replace with OpenAI later.
+    GPT5.2 Output Generator
     """
-    return f"[Model2 output placeholder]\n\n{prompt}"
+    response = _gpt_client.responses.create(
+        model="gpt-5.2",
+        reasoning={
+            "effort": "low"
+        },
+        instructions= "Answer in 100-200 words.",
+        input=prompt
+    )
+
+    return response.output_text
+
 
 def generate_deepseek_output(prompt: str) -> str:
     """

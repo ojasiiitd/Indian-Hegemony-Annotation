@@ -1,2 +1,3 @@
 annotation_app/accounts/google_creds.json
 annotation_app/accounts/*.json
+annotation_app/accounts/notes.txt

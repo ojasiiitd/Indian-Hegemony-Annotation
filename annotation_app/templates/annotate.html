@@ -46,6 +46,11 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
   {% for m in models %}
     <h2 class="title is-4">{{ m.label }}</h2>
 
+    <div class="notification is-warning is-light mb-4" style="margin-top:-0.75rem;">
+      <strong>IMPORTANT NOTE:</strong>
+      Please check your prompt and use the <em>Generate</em> button <b>only once</b> per model per annotation to ensure no credits are wasted.
+    </div>
+
     <div class="columns is-variable is-6">
 
       {% for kind in ["base", "identity"] %}
@@ -61,7 +66,7 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
         <textarea class="textarea"
                   id="{{ m.js }}_llm_output_{{ kind }}"
                   name="{{ m.key }}_{{ kind }}_output"
-                  rows="15"
+                  rows="20"
                   readonly>
 {{ draft.outputs[m.key][kind].text if draft }}
         </textarea>
