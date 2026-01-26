@@ -135,6 +135,7 @@
 </head>
 
 <body class="{% if request.endpoint == 'login' %}login-page{% endif %}">
+    
     <nav class="navbar is-link mb-5" role="navigation">
     <div class="navbar-brand">
         <a class="navbar-item has-text-weight-bold">
@@ -145,27 +146,43 @@
     <div class="navbar-menu">
         <div class="navbar-start">
 
-        <a class="navbar-item" href="/references">
+        <a class="navbar-item"
+            href="/references"
+            target="_blank"
+            rel="noopener noreferrer">
             References
         </a>
-        <a class="navbar-item" href="/examples">
+
+        <a class="navbar-item"
+            href="/examples"
+            target="_blank"
+            rel="noopener noreferrer">
             Examples
         </a>
 
         <!-- Visible to ALL logged-in users -->
-        <a class="navbar-item" href="/freshannotate">
+        <a class="navbar-item"
+            href="/freshannotate"
+            target="_blank"
+            rel="noopener noreferrer">
             Annotate
         </a>
+
         <!-- Admin-only links -->
         {% if session.get("user") and session["user"]["role"] == "admin" %}
-            <a class="navbar-item" href="/records">
-                Show Records
+            <a class="navbar-item"
+            href="/records"
+            target="_blank"
+            rel="noopener noreferrer">
+            Show Records
             </a>
 
-            <a class="navbar-item" href="/admin">
+            <a class="navbar-item"
+            href="/admin"
+            target="_blank"
+            rel="noopener noreferrer">
             Admin
             </a>
-
         {% endif %}
 
         </div>
@@ -176,7 +193,8 @@
             <span class="mr-2 is-size-6 has-text-warning">
                 {{ session["user"]["username"] }}
             </span>
-            <a class="button is-light is-small" href="{{ url_for('logout') }}">
+            <a class="button is-light is-small"
+                href="{{ url_for('logout') }}">
                 Logout
             </a>
             </div>

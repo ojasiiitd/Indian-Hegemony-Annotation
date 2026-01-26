@@ -4,11 +4,11 @@ from google.genai import types
 from config import KEYS
 from openai import OpenAI
 
+
 _gemini_client = genai.Client(api_key=KEYS["GEMINI_API_KEY"])
 _gpt_client = OpenAI(api_key=KEYS["GPT_API_KEY"])
 # _llama_client = 
-# _deepseek_client = 
-
+_deepseek_client =  OpenAI(api_key=KEYS["DEEPSEEK_API_KEY"], base_url="https://api.deepseek.com")
 
 # def generate_gemini_output(prompt: str) -> str:
 #     """
@@ -59,9 +59,24 @@ def generate_gpt_output(prompt: str) -> str:
     return response.output_text
 
 
+# def generate_deepseek_output(prompt: str) -> str:
+#     """
+#     Placeholder.
+#     """
+#     return f"[Model4 output placeholder]\n\n{prompt}"
 def generate_deepseek_output(prompt: str) -> str:
     """
-    Placeholder.
-    Replace with Deepseek later.
+    DeepSeek Output Generator
     """
-    return f"[Model4 output placeholder]\n\n{prompt}"
+
+    response = _deepseek_client.chat.completions.create(
+        model="deepseek-chat",
+        thinking="disabled"
+        messages=[
+            {"role": "system", "content": "You are a helpful assistant"},
+            {"role": "user", "content": f"{prompt}"},
+        ],
+        stream=False
+    )
+
+    print(response.choices[0].message.content)
