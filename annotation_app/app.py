@@ -163,7 +163,7 @@ def generate_gpt():
 @app.route("/generate/llama", methods=["POST"])
 @login_required
 def generate_llama():
-    print("😋 Llama called")
+    print("😋 GPT-OSS called")
     data = request.json
     prompt = data.get("prompt", "").strip()
 

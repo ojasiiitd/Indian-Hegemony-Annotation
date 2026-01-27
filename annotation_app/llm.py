@@ -3,18 +3,13 @@ from google import genai
 from google.genai import types
 from config import KEYS
 from openai import OpenAI
-
+import requests
 
 _gemini_client = genai.Client(api_key=KEYS["GEMINI_API_KEY"])
 _gpt_client = OpenAI(api_key=KEYS["GPT_API_KEY"])
-# _llama_client = 
 _deepseek_client =  OpenAI(api_key=KEYS["DEEPSEEK_API_KEY"], base_url="https://api.deepseek.com")
 
-# def generate_gemini_output(prompt: str) -> str:
-#     """
-#     Placeholder.
-#     """
-#     return f"[Model1 output placeholder]\n\n{prompt}"
+
 def generate_gemini_output(prompt: str) -> str:
     """
     Gemini Output Generator
@@ -29,20 +24,6 @@ def generate_gemini_output(prompt: str) -> str:
     )
     return response.text
 
-
-def generate_llama_output(prompt: str) -> str:
-    """
-    Placeholder.
-    Replace with LLAMA later.
-    """
-    return f"[Model3 output placeholder]\n\n{prompt}"
-
-
-# def generate_gpt_output(prompt: str) -> str:
-#     """
-#     Placeholder.
-#     """
-#     return f"[Model2 output placeholder]\n\n{prompt}"
 def generate_gpt_output(prompt: str) -> str:
     """
     GPT5.2 Output Generator
@@ -58,25 +39,62 @@ def generate_gpt_output(prompt: str) -> str:
 
     return response.output_text
 
-
-# def generate_deepseek_output(prompt: str) -> str:
-#     """
-#     Placeholder.
-#     """
-#     return f"[Model4 output placeholder]\n\n{prompt}"
 def generate_deepseek_output(prompt: str) -> str:
     """
     DeepSeek Output Generator
     """
-
-    response = _deepseek_client.chat.completions.create(
-        model="deepseek-chat",
-        thinking="disabled"
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant"},
-            {"role": "user", "content": f"{prompt}"},
-        ],
-        stream=False
+    response = requests.post(
+    url="https://openrouter.ai/api/v1/chat/completions",
+    headers={
+        "Authorization": f"Bearer {KEYS["OPENAI_API_KEY"]}",
+        "Content-Type": "application/json",
+    },
+    data=json.dumps({
+            "model": "deepseek/deepseek-v3.2",
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "Answer in 100-200 words."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            "reasoning": {"enabled": True}
+        })
     )
+    response = response.json()
+    response = response['choices'][0]['message']['content']
+    return response
 
-    print(response.choices[0].message.content)
+
+def generate_llama_output(prompt: str) -> str:
+    """
+    GPT-OSS-120B Output Generator
+    """
+    response = requests.post(
+    url="https://openrouter.ai/api/v1/chat/completions",
+    headers={
+        "Authorization": f"Bearer {KEYS["OPENAI_API_KEY"]}",
+        "Content-Type": "application/json",
+    },
+    data=json.dumps({
+        "model": "openai/gpt-oss-120b",
+        "messages": [
+                {
+                    "role": "system",
+                    "content": "Answer in 100-200 words."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+        "reasoning": {"enabled": True}
+    })
+    )
+    response = response.json()
+    response = response['choices'][0]['message']['content']
+    return response
+
