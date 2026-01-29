@@ -57,6 +57,7 @@ async function generateOutput(model, kind) {
   // gemini_llm_output_identity
   // chatgpt_llm_output_base
   // chatgpt_llm_output_identity
+  const btn = document.getElementById(`${model}_${kind}_generate_btn`);
   const outputBox = document.getElementById(
     `${model}_llm_output_${kind}`
   );
