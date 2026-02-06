@@ -1,0 +1,258 @@
+{
+  "id": "8b19db35-d9f7-42ea-b597-bf604c291d49",
+  "timestamp": "2026-02-06T11:18:48.161375",
+  "annotator_name": "unjas",
+  "region": "West",
+  "state": "Gujarat",
+  "prompts": {
+    "base": "unjasunjas",
+    "identity": "unjasunjas"
+  },
+  "outputs": {
+    "gemini": {
+      "base": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "unjas"
+    },
+    "gpt": {
+      "base": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "unjas"
+    },
+    "llama": {
+      "base": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "unjas"
+    },
+    "deepseek": {
+      "base": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "unjas"
+    }
+  },
+  "references": "unjas"
+}

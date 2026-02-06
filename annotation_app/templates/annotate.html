@@ -67,7 +67,8 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
                   id="{{ m.js }}_llm_output_{{ kind }}"
                   name="{{ m.key }}_{{ kind }}_output"
                   rows="20"
-                  readonly>
+                  readonly
+                  style="color: #1f4ed8;">
 {{ draft.outputs[m.key][kind].text if draft }}
         </textarea>
 

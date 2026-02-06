@@ -9,6 +9,7 @@ from llm import *
 import secrets
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
+from draft_store import *
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
@@ -43,48 +44,45 @@ def annotate():
     if request.method == "POST":
         record = build_record(request.form)
 
-        # 🔑 store draft
-        session["draft_record"] = record
+        draft_id = save_draft(record)
+        session["draft_id"] = draft_id
 
-        return render_template(
-            "review.html",
-            record=record
-        )
+        return render_template("review.html", record=record)
 
-    # GET: render form, possibly pre-filled
-    draft = session.get("draft_record")
+    draft_id = session.get("draft_id")
+    draft = load_draft(draft_id) if draft_id else None
+
     return render_template(
         "annotate.html",
         region_state_map=REGION_STATE_MAP,
         draft=draft
     )
 
-@app.route("/freshannotate", methods=["GET", "POST"])
+@app.route("/freshannotate")
 @login_required
 def freshannotate():
-    # Retrieve and discard draft
-    session.pop("draft_record", None)
+    draft_id = session.pop("draft_id", None)
+    if draft_id:
+        delete_draft(draft_id)
     return redirect("/")
 
 @app.route("/examples")
 def examples():
     return render_template("examples.html")
 
-
 @app.route("/confirm", methods=["POST"])
 @login_required
 def confirm():
-    # Retrieve and discard draft in one step
-    record = session.pop("draft_record", None)
+    draft_id = session.pop("draft_id", None)
 
-    # Fallback safety (in case someone POSTs directly)
-    if record is None:
-        record = json.loads(request.form["record"])
+    if not draft_id:
+        abort(400)
 
-    # 1. Write JSONL
+    record = load_draft(draft_id)
+    delete_draft(draft_id)
+
     write_jsonl(record)
 
-    # 2. Append to Google Sheets
     try:
         append_row(json_to_row(record))
     except Exception as e:
@@ -160,7 +158,7 @@ def generate_gpt():
 
     return jsonify({"text": generate_gpt_output(prompt)})
 
-@app.route("/generate/llama", methods=["POST"])
+@app.route("/generate/llama", methods=["POST"]) # actually gpt oss 120b
 @login_required
 def generate_llama():
     print("😋 GPT-OSS called")

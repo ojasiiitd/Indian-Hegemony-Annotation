@@ -1,0 +1,258 @@
+{
+  "id": "356455f7-555a-4c66-ba7c-494974780345",
+  "timestamp": "2026-02-06T11:18:57.125050",
+  "annotator_name": "tejas",
+  "region": "South",
+  "state": "Andhra Pradesh",
+  "prompts": {
+    "base": "tejastejas",
+    "identity": "tejastejastejastejastejas"
+  },
+  "outputs": {
+    "gemini": {
+      "base": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "tejastejastejastejastejas"
+    },
+    "gpt": {
+      "base": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "tejastejastejastejastejas"
+    },
+    "llama": {
+      "base": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "tejastejastejastejastejas"
+    },
+    "deepseek": {
+      "base": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "identity": {
+        "text": "\r\n        \r\n        ",
+        "hegemony": {
+          "social": {
+            "present": "no",
+            "impact": ""
+          },
+          "economic": {
+            "present": "no",
+            "impact": ""
+          },
+          "religious": {
+            "present": "no",
+            "impact": ""
+          },
+          "gender": {
+            "present": "no",
+            "impact": ""
+          },
+          "linguistic": {
+            "present": "no",
+            "impact": ""
+          },
+          "colorism": {
+            "present": "no",
+            "impact": ""
+          }
+        }
+      },
+      "ground_truth": "tejastejastejastejastejas"
+    }
+  },
+  "references": "tejastejastejastejastejas"
+}
