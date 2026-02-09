@@ -95,16 +95,14 @@ All submitted records (latest first).
       </tbody>
     </table>
 
-    <!-- ===== Model-specific Ground Truth ===== -->
-    {% if model_data.ground_truth %}
-      <p class="mt-2">
-        <strong>Model {{ idx }} Ground Truth</strong>
-      </p>
-      <pre class="wrapped-pre">{{ model_data.ground_truth }}</pre>
-    {% endif %}
-
     <hr>
   {% endfor %}
+
+  <!-- ===== Ground Truth ===== -->
+  <p class="mt-2">
+    <strong>Ground Truth</strong>
+  </p>
+  <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
 
   <!-- ================= REFERENCES ================= -->
   {% if r.references %}

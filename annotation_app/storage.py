@@ -105,7 +105,6 @@ def build_record(form):
                     "text": form.get("gemini_identity_output"),
                     "hegemony": extract_hegemony(form, "gemini_identity")
                 },
-                "ground_truth": form.get("gemini_ground_truth")
             },
             "gpt": {
                 "base": {
@@ -116,7 +115,6 @@ def build_record(form):
                     "text": form.get("gpt_identity_output"),
                     "hegemony": extract_hegemony(form, "gpt_identity")
                 },
-                "ground_truth": form.get("gpt_ground_truth")
             },
             "llama": {
                 "base": {
@@ -127,7 +125,6 @@ def build_record(form):
                     "text": form.get("llama_identity_output"),
                     "hegemony": extract_hegemony(form, "llama_identity")
                 },
-                "ground_truth": form.get("llama_ground_truth")
             },
             "deepseek": {
                 "base": {
@@ -138,9 +135,9 @@ def build_record(form):
                     "text": form.get("deepseek_identity_output"),
                     "hegemony": extract_hegemony(form, "deepseek_identity")
                 },
-                "ground_truth": form.get("deepseek_ground_truth")
             }
         },
+        "ground_truth": form.get("ground_truth"),
         "references": form.get("references", "")
     }
 
@@ -194,23 +191,20 @@ def json_to_row(record):
     # ========= GEMINI =========
     append_output(record["outputs"]["gemini"]["base"])
     append_output(record["outputs"]["gemini"]["identity"])
-    row.append(record["outputs"]["gemini"]["ground_truth"])
 
     # ========= GPT =========
     append_output(record["outputs"]["gpt"]["base"])
     append_output(record["outputs"]["gpt"]["identity"])
-    row.append(record["outputs"]["gpt"]["ground_truth"])
 
     # ========= LLAMA =========
     append_output(record["outputs"]["llama"]["base"])
     append_output(record["outputs"]["llama"]["identity"])
-    row.append(record["outputs"]["llama"]["ground_truth"])
     
     # ========= DeepSeek =========
     append_output(record["outputs"]["deepseek"]["base"])
     append_output(record["outputs"]["deepseek"]["identity"])
-    row.append(record["outputs"]["deepseek"]["ground_truth"])
 
+    row.append(record["ground_truth"])
 
     # --- references ---
     row.append(record["references"])

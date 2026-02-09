@@ -80,18 +80,18 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
       {% endfor %}
 
     </div>
+  {% endfor %}
 
   <!-- GROUND TRUTH -->
   <div class="field">
     <label class="label">Ground Truth (100–200 words)</label>
     <textarea class="textarea"
-              name="{{ m.js }}_ground_truth"
+              name="ground_truth"
               rows="15"
-              required>{{ draft.outputs[m.key].ground_truth if draft }}</textarea>
+              required>{{ draft.ground_truth if draft }}</textarea>
   </div>
 
     <hr>
-  {% endfor %}
 
   <!-- REFERENCES -->
   <div class="field">

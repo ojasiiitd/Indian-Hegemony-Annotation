@@ -33,7 +33,7 @@ Verify all entries before final submission.
 </div>
 
 <!-- ================= MODELS LOOP ================= -->
-{% for model, model_data in record.outputs.items() %}
+{% for model_key, model_data in record.outputs.items() %}
 {% set idx = loop.index %}
 
 <div class="box">
@@ -91,13 +91,14 @@ Verify all entries before final submission.
     </tbody>
   </table>
 
-  <!-- ===== GROUND TRUTH ===== -->
-  <h3 class="title is-6 mt-4">Ground Truth (Model {{ idx }})</h3>
-  <pre class="wrapped-pre">{{ model_data.ground_truth }}</pre>
-
 </div>
 
 {% endfor %}
+  <!-- ===== GROUND TRUTH ===== -->
+  <div class="box">
+  <h2 class="title is-6">Ground Truth</h2>
+  <pre class="wrapped-pre">{{ record.ground_truth }}</pre>
+</div>
 
 <!-- ================= REFERENCES ================= -->
 <div class="box">
