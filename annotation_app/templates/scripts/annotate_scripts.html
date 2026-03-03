@@ -6,18 +6,23 @@
     const stateSelect = document.getElementById("state");
 
     const region = regionSelect.value;
-    stateSelect.innerHTML = "";
 
-    if (!region) {
-      stateSelect.innerHTML = "<option value=''>Select state</option>";
-      return;
-    }
+    // Reset dropdown
+    stateSelect.innerHTML = "<option value=''>Select state</option>";
 
-    const state = regionStateMap[region];
-    const option = document.createElement("option");
-    option.value = state;
-    option.text = state;
-    stateSelect.appendChild(option);
+    if (!region) return;
+
+    const states = regionStateMap[region];
+
+    if (!states) return;
+
+    // Loop over list of states
+    states.forEach(function(state) {
+      const option = document.createElement("option");
+      option.value = state;
+      option.text = state;
+      stateSelect.appendChild(option);
+    });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -28,13 +33,12 @@
       const regionSelect = document.getElementById("region");
       regionSelect.value = region;
 
-      updateState();  // now safe
+      updateState();  // Populate state dropdown
 
       document.getElementById("state").value = state;
     {% endif %}
   });
 </script>
-
 
 
 <script>

@@ -2,4 +2,6 @@ annotation_app/accounts/google_creds.json
 annotation_app/accounts/*.json
 annotation_app/accounts/notes.txt
 annotation_app/__pycache__/
+annotation_app/__pycache__/*.pyc
 annotation_app/data/
+.DS_Store

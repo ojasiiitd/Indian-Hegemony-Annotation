@@ -4,11 +4,10 @@ import json
 DATA_FILE = "annotation_app/static/annotations.jsonl"
 
 REGION_STATE_MAP = {
-	"East": "West Bengal",
-	"North": "Bihar",
-	"South": "Andhra Pradesh",
-	"Central": "Maharashtra",
-	"West": "Gujarat"
+    "East": ["West Bengal"],
+    "North": ["Uttar Pradesh", "Bihar"],
+    "South": ["Andhra Pradesh", "Telangana"],
+    "West": ["Maharashtra", "Gujarat"]
 }
 
 HEGEMONY_AXES = [
