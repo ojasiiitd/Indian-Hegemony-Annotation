@@ -5,11 +5,11 @@
     <label class="label">Name</label>
     <div class="control">
       <input class="input"
-             type="text"
-             name="annotator_name"
-             placeholder="Enter your name"
-             required
-             value="{{ draft.annotator_name if draft }}">
+            type="text"
+            name="annotator_name"
+            required
+            value="{% if draft %}{{ draft.annotator_name }}{% else %}{{ user.username }}{% endif %}"
+            readonly>
     </div>
   </div>
 
@@ -18,13 +18,17 @@
     <label class="label">Region</label>
     <div class="control select is-fullwidth">
       <select id="region"
-              name="region"
-              required
-              onchange="updateState()">
-        <option value="">Select region</option>
+          name="region"
+          required
+          onchange="updateState()">
+
         {% for region in region_state_map.keys() %}
           <option value="{{ region }}"
-            {% if draft and draft.region == region %}selected{% endif %}>
+            {% if draft and draft.region == region %}
+              selected
+            {% elif not draft and user.region == region %}
+              selected
+            {% endif %}>
             {{ region }}
           </option>
         {% endfor %}

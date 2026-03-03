@@ -6,7 +6,7 @@
 
   <div class="box" style="width: 500px;">
 
-    <h1 class="has-text-dark is-size-3">Login</h1>
+    <h1 class="has-text-dark is-size-3">Enter Access Code</h1>
 
     {% if error %}
       <div class="notification is-danger is-light">
@@ -17,27 +17,16 @@
     <form method="POST">
 
       <div class="field">
-        <label class="label">Username</label>
+        <label class="label">Secret Access Code (Old Password which was provided)</label>
         <div class="control">
-          <input class="input" type="text" name="username" required autofocus>
-        </div>
-      </div>
-
-      <div class="field">
-        <label class="label">Password</label>
-        <div class="control">
-          <input class="input" type="password" name="password" required>
+          <input class="input" type="password" name="secret_code" required autofocus>
         </div>
       </div>
 
       <div class="field mt-4">
         <button class="button is-dark is-fullwidth" type="submit">
-          Login
+          Continue →
         </button>
-        <p class="has-text-centered mt-4">
-          New annotator?
-          <a href="{{ url_for('auth.access_code') }}">Create account</a>
-        </p>
       </div>
 
     </form>

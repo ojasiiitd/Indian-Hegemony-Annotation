@@ -135,6 +135,66 @@
         flex-direction: column;
         height: 100%;
     }
+
+    /* NAV LINK BASE */
+    .navbar-item.is-disabled {
+        opacity: 0.4;
+        pointer-events: none;
+        cursor: not-allowed;
+    }
+    .nav-links .nav-link {
+        background: transparent !important;
+        border: none !important;
+        font-weight: 600;
+        position: relative;
+        padding: 0.5rem 0.75rem;
+        transition: color 0.2s ease;
+    }
+
+    /* Hover underline animation */
+    .nav-links .nav-link::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        bottom: 8px;
+        width: 0%;
+        height: 2px;
+        background-color: #facc15; /* yellow */
+        transition: width 0.25s ease;
+    }
+
+    .nav-links .nav-link:hover::after {
+        width: 100%;
+    }
+
+    /* Active highlight */
+    .nav-active {
+        color: #eab308 !important;
+    }
+
+    .nav-active::after {
+        width: 100% !important;
+    }
+
+    /* Secondary active */
+    .nav-active-secondary {
+        color: #a4b3c9 !important;
+    }
+
+    .nav-active-secondary::after {
+        background-color: #9ca3af;
+        width: 100% !important;
+    }
+
+    /* Admin */
+    .nav-admin {
+        color: #dc2626 !important;
+    }
+
+    .nav-admin::after {
+        background-color: #dc2626;
+    }
+
     </style>
   {% endblock %}
 </head>
@@ -143,58 +203,70 @@
     
     <nav class="navbar is-link mb-5" role="navigation">
     <div class="navbar-brand">
-        <a class="navbar-item has-text-weight-bold">
+        <a class="navbar-item">
         Annotating Begumpura
         </a>
     </div>
 
     <div class="navbar-menu">
-        <div class="navbar-start">
+        <div class="navbar-start nav-links">
 
-        <a class="navbar-item"
+        <!-- Annotate -->
+        <a class="navbar-item nav-link
+            {% if request.endpoint in ['annotate','freshannotate'] %}
+                nav-active
+            {% endif %}"
+            href="{{ url_for('freshannotate') }}"
+            target="_blank">
+            Annotate
+        </a>
+
+        <!-- Review (Disabled) -->
+        <a class="navbar-item nav-link is-disabled
+            {% if request.endpoint == 'records' %}
+                nav-active
+            {% endif %}">
+            Review
+        </a>
+
+        <!-- Examples -->
+        <a class="navbar-item nav-link
+            {% if request.endpoint == 'examples' %}
+                nav-active-secondary
+            {% endif %}"
+            href="{{ url_for('examples') }}"
+            target="_blank">
+            Examples
+        </a>
+
+        <!-- References -->
+        <a class="navbar-item nav-link
+            {% if request.endpoint == 'references' %}
+                nav-active-secondary
+            {% endif %}"
+            href="{{ url_for('references') }}"
+            target="_blank">
+            References
+        </a>
+
+        <!-- Guidelines -->
+        <a class="navbar-item nav-link"
             href="https://docs.google.com/document/d/1dSHQtgGm9d18kL-dMsWP5qyfh76F62QVPeT_bXB5uMo/edit?tab=t.0#heading=h.sl3jtamap7ca"
             target="_blank"
             rel="noopener noreferrer">
             Guidelines
         </a>
 
-        <a class="navbar-item"
-            href="/references"
-            target="_blank"
-            rel="noopener noreferrer">
-            References
-        </a>
-
-        <a class="navbar-item"
-            href="/examples"
-            target="_blank"
-            rel="noopener noreferrer">
-            Examples
-        </a>
-
-        <!-- Visible to ALL logged-in users -->
-        <a class="navbar-item"
-            href="/freshannotate"
-            target="_blank"
-            rel="noopener noreferrer">
-            Annotate
-        </a>
-
-        <!-- Admin-only links -->
+        <!-- Admin -->
         {% if session.get("user") and session["user"]["role"] == "admin" %}
-            <a class="navbar-item"
-            href="/records"
-            target="_blank"
-            rel="noopener noreferrer">
-            Show Records
-            </a>
-
-            <a class="navbar-item"
-            href="/admin"
-            target="_blank"
-            rel="noopener noreferrer">
+        <a class="navbar-item nav-link nav-admin
+            {% if request.endpoint == 'admin' %}
+                nav-active-admin
+            {% endif %}"
+            href="{{ url_for('admin') }}"
+            target="_blank">
             Admin
-            </a>
+        </a>
         {% endif %}
 
         </div>

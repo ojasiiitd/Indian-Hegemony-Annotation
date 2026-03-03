@@ -1,0 +1,137 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<section class="section is-flex is-align-items-center is-justify-content-center">
+
+  <div class="box" style="width: 600px;">
+
+    <h1 class="has-text-dark is-size-3">Create Annotator Account</h1>
+
+    {% if error %}
+      <div class="notification is-danger is-light">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="POST">
+      <!-- USERNAME -->
+      <div class="field">
+        <label class="label">Username</label>
+        <input class="input" type="text" name="username" required>
+      </div>
+
+      <!-- PASSWORD -->
+      <div class="field">
+        <label class="label">Password</label>
+        <input class="input" type="password" name="password" required>
+      </div>
+
+      <!-- STATE -->
+      <div class="field">
+        <label class="label">State</label>
+        <div class="control select is-fullwidth">
+          <select name="state" required>
+            <option value="">Select state</option>
+            {% for region, states in region_state_map.items() %}
+              {% for s in states %}
+                <option value="{{ s }}">{{ s }}</option>
+              {% endfor %}
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <!-- AGE -->
+      <div class="field">
+        <label class="label">Age Group</label>
+        <div class="control select is-fullwidth">
+          <select name="age_group" required>
+            <option>18–24</option>
+            <option>25–34</option>
+            <option>35–44</option>
+            <option>45+</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- GENDER -->
+      <div class="field">
+        <label class="label">Gender</label>
+        <div class="control select is-fullwidth">
+          <select name="gender" required>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- EDUCATION -->
+      <div class="field">
+        <label class="label">Education Level</label>
+        <div class="control select is-fullwidth">
+          <select name="education_level" required>
+            <option>Undergraduate</option>
+            <option>Postgraduate</option>
+            <option>PhD</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- FIELD -->
+      <div class="field">
+        <label class="label">Field of Study</label>
+        <input class="input" type="text" name="field_of_study" required>
+      </div>
+
+      <!-- SOCIAL THEORY -->
+      <div class="field">
+        <label class="label">Trained in Social Theory?</label>
+        <div class="control select is-fullwidth">
+          <select name="social_theory_training" required>
+            <option>Yes</option>
+            <option>No</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- LLM EXPERIENCE -->
+      <div class="field">
+        <label class="label">LLM Experience Level</label>
+        <div class="control select is-fullwidth">
+          <select name="llm_experience_level" required>
+            <option>Beginner</option>
+            <option>Intermediate</option>
+            <option>Advanced</option>
+            <option>Researcher</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- URBAN/RURAL -->
+      <div class="field">
+        <label class="label">Background</label>
+        <div class="control select is-fullwidth">
+          <select name="urban_rural_background" required>
+            <option>Urban</option>
+            <option>Semi-Urban</option>
+            <option>Rural</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field mt-4">
+        <button class="button is-dark is-fullwidth" type="submit">
+          Create Account
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endblock %}

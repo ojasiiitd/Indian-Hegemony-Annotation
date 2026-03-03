@@ -9,10 +9,12 @@ from llm import *
 import secrets
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
+from auth import auth_bp
 from draft_store import *
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
+app.register_blueprint(auth_bp)
 
 @app.before_request
 def validate_session():
@@ -41,6 +43,7 @@ def admin_required(f):
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def annotate():
+
     if request.method == "POST":
         record = build_record(request.form)
 
@@ -55,8 +58,15 @@ def annotate():
     return render_template(
         "annotate.html",
         region_state_map=REGION_STATE_MAP,
-        draft=draft
+        draft=draft,
+        user=session.get("user")
     )
+
+@app.route("/promptreview")
+@login_required
+def prompt_review():
+    return "Hello"
+
 
 @app.route("/freshannotate")
 @login_required

@@ -1,6 +1,10 @@
 <script>
   const regionStateMap = {{ region_state_map | tojson }};
 
+  // Determine defaults:
+  const defaultRegion = "{% if draft %}{{ draft.region }}{% else %}{{ user.region if user }}{% endif %}";
+  const defaultState  = "{% if draft %}{{ draft.state }}{% else %}{{ user.state if user }}{% endif %}";
+
   function updateState() {
     const regionSelect = document.getElementById("region");
     const stateSelect = document.getElementById("state");
@@ -10,33 +14,33 @@
     // Reset dropdown
     stateSelect.innerHTML = "<option value=''>Select state</option>";
 
-    if (!region) return;
+    if (!region || !regionStateMap[region]) return;
 
     const states = regionStateMap[region];
 
-    if (!states) return;
-
-    // Loop over list of states
     states.forEach(function(state) {
       const option = document.createElement("option");
       option.value = state;
       option.text = state;
+
+      // Auto-select correct state
+      if (state === defaultState) {
+        option.selected = true;
+      }
+
       stateSelect.appendChild(option);
     });
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    {% if draft %}
-      const region = "{{ draft.region }}";
-      const state = "{{ draft.state }}";
 
-      const regionSelect = document.getElementById("region");
-      regionSelect.value = region;
+    const regionSelect = document.getElementById("region");
 
-      updateState();  // Populate state dropdown
+    if (defaultRegion) {
+      regionSelect.value = defaultRegion;
+    }
 
-      document.getElementById("state").value = state;
-    {% endif %}
+    updateState();
   });
 </script>
 
