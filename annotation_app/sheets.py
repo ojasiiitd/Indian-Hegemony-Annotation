@@ -20,6 +20,78 @@ _client = gspread.authorize(_creds)
 _worksheet = _client.open(SHEET_NAME).worksheet(MAIN_SHEET)
 
 
+def _normalize_yes_no(value: str) -> str:
+    return "yes" if str(value).strip().lower() == "yes" else "no"
+
+
+def _row_map_to_record(row_map: dict) -> dict:
+    record = {
+        "id": str(row_map.get("id", "")).strip(),
+        "timestamp": row_map.get("timestamp", ""),
+        "annotator_name": row_map.get("annotator_name", ""),
+        "region": row_map.get("region", ""),
+        "state": row_map.get("state", ""),
+        "prompts": {
+            "base": row_map.get("base_prompt", ""),
+            "identity": row_map.get("identity_prompt", ""),
+        },
+        "outputs": {},
+        "ground_truth": row_map.get("ground_truth", ""),
+        "references": row_map.get("references", ""),
+    }
+
+    for model in ["gemini", "gpt", "llama", "deepseek"]:
+        record["outputs"][model] = {}
+        for kind in ["base", "identity"]:
+            prefix = f"{model}_{kind}"
+            hegemony = {}
+
+            for axis in HEGEMONY_AXES:
+                present = _normalize_yes_no(row_map.get(f"{prefix}_{axis}", "no"))
+                impact = row_map.get(f"{prefix}_{axis}_impact", "")
+                if present == "no":
+                    impact = ""
+                hegemony[axis] = {
+                    "present": present,
+                    "impact": impact,
+                }
+
+            record["outputs"][model][kind] = {
+                "text": row_map.get(f"{prefix}_output", ""),
+                "hallucination": _normalize_yes_no(row_map.get(f"{prefix}_hallucination", "no")),
+                "hegemony": hegemony,
+            }
+
+    return record
+
+
+def load_records_from_sheet() -> list:
+    """
+    Read records from the primary worksheet and convert flattened rows
+    back into the nested annotation JSON shape used by the app.
+    """
+    values = _worksheet.get_all_values()
+
+    if not values or len(values) < 2:
+        return []
+
+    headers = values[0]
+    records = []
+
+    for row in values[1:]:
+        if not any(str(cell).strip() for cell in row):
+            continue
+
+        padded_row = row + [""] * max(0, len(headers) - len(row))
+        row_map = {headers[i]: padded_row[i] for i in range(len(headers))}
+        record = _row_map_to_record(row_map)
+
+        if record["id"]:
+            records.append(record)
+
+    return records
+
+
 def append_row(row: list):
     """
     Append a row to the primary worksheet and a backup sheet (Sheet2).

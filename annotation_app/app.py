@@ -72,6 +72,7 @@ def prompt_review():
 @login_required
 def freshannotate():
     draft_id = session.pop("draft_id", None)
+    session.pop("editing_id", None)
     if draft_id:
         delete_draft(draft_id)
     return redirect("/")
@@ -94,10 +95,20 @@ def confirm():
     delete_draft(draft_id)
 
     if editing_id:
-        record["id"] = editing_id
+        print("in editinggg")
 
         # Update JSONL
         records = load_records()
+        record_exists = any(r["id"] == editing_id for r in records)
+
+        # If stale editing_id leaked in session, treat this submission as a new row.
+        if not record_exists:
+            print("stale editing_id; falling back to new row")
+            write_jsonl(record)
+            append_row(json_to_row(record))
+            return redirect("/")
+
+        record["id"] = editing_id
         updated_records = []
 
         for r in records:
@@ -112,6 +123,7 @@ def confirm():
         update_row_by_id(editing_id, json_to_row(record))
 
     else:
+        print("in newroww")
         write_jsonl(record)
         append_row(json_to_row(record))
 
@@ -217,27 +229,65 @@ def references():
 @login_required
 def load_annotation():
 
+    user = session["user"]["username"]
+    try:
+        records = load_records_from_sheet()
+    except Exception as e:
+        return render_template(
+            "load_annotation.html",
+            error=f"Could not load annotations from Google Sheets: {e}",
+            user_records=[]
+        )
+
+    # 🔒 Only current annotator's records (admins see all)
+    if session["user"]["role"] == "admin":
+        user_records = records
+    else:
+        user_records = [
+            r for r in records
+            if r["annotator_name"] == user
+        ]
+
     if request.method == "POST":
         annotation_id = request.form.get("annotation_id", "").strip()
 
         if not annotation_id:
-            return render_template("load_annotation.html", error="Please enter a valid ID")
-
-        records = load_records()
+            return render_template(
+                "load_annotation.html",
+                error="Please enter a valid ID",
+                user_records=user_records
+            )
 
         for record in records:
             if record["id"] == annotation_id:
 
-                # Save as draft
+                # # 🔐 Security check
+                # if (
+                #     session["user"]["role"] != "admin"
+                #     and record["annotator_name"] != user
+                # ):
+                #     return render_template(
+                #         "load_annotation.html",
+                #         error="You cannot edit someone else's annotation.",
+                #         user_records=user_records
+                #     )
+
                 draft_id = save_draft(record)
                 session["draft_id"] = draft_id
                 session["editing_id"] = annotation_id
 
                 return redirect(url_for("annotate"))
 
-        return render_template("load_annotation.html", error="Annotation ID not found")
+        return render_template(
+            "load_annotation.html",
+            error="Annotation ID not found",
+            user_records=user_records
+        )
 
-    return render_template("load_annotation.html")
+    return render_template(
+        "load_annotation.html",
+        user_records=user_records
+    )
 
 if __name__ == "__main__":
     app.run(debug=True)
