@@ -2,115 +2,126 @@
 
 {% block content %}
 
-<h1 class="title">Collected Annotations</h1>
-<p class="subtitle">
-All submitted records (latest first).
-</p>
+<section class="section pt-1">
+  <div class="container">
 
-{% if not records %}
-  <p>No records yet.</p>
-{% endif %}
-
-{% for r in records %}
-<div class="box">
-
-  <!-- ================= HEADER ================= -->
-  <div class="columns is-vcentered">
-    <div class="column">
-      <strong>ID:</strong> {{ r.annotator_name }} <br>
-      <strong>ID:</strong> {{ r.id }} <br>
-      <strong>Region:</strong> {{ r.region }} — {{ r.state }}
+    <div class="card mb-5">
+      <div class="card-content">
+        <h1 class="title">Collected Annotations</h1>
+        <p class="subtitle mb-0">
+          All submitted records (latest first).
+        </p>
+      </div>
     </div>
-    <div class="column has-text-right">
-      <small>{{ r.timestamp }}</small>
-    </div>
-  </div>
 
-  <hr>
+    {% if not records %}
+      <div class="card mb-5">
+        <div class="card-content">
+          <p>No records yet.</p>
+        </div>
+      </div>
+    {% endif %}
 
-  <!-- ================= PROMPTS ================= -->
-  <h3 class="title is-6">Prompts</h3>
+    {% for r in records %}
+    <div class="card mb-5">
+      <div class="card-content">
 
-  <table class="table is-fullwidth is-bordered is-size-7">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Text</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><strong>Base</strong></td>
-        <td><pre class="wrapped-pre">{{ r.prompts.base }}</pre></td>
-      </tr>
-      <tr>
-        <td><strong>Identity</strong></td>
-        <td><pre class="wrapped-pre">{{ r.prompts.identity }}</pre></td>
-      </tr>
-    </tbody>
-  </table>
+        <div class="columns is-vcentered">
+          <div class="column">
+            <strong>ID:</strong> {{ r.annotator_name }} <br>
+            <strong>ID:</strong> {{ r.id }} <br>
+            <strong>Region:</strong> {{ r.region }} — {{ r.state }}
+          </div>
+          <div class="column has-text-right">
+            <small>{{ r.timestamp }}</small>
+          </div>
+        </div>
 
-  <hr>
+        <hr>
 
-  <!-- ================= MODEL OUTPUTS ================= -->
-  {% for model, model_data in r.outputs.items() %}
-  {% set idx = loop.index %}
-    <h3 class="title is-6">
-      Model {{ idx }} Outputs
-    </h3>
+        <h3 class="title is-6">Prompts</h3>
 
-    <table class="table is-fullwidth is-bordered is-size-7">
-      <thead>
-        <tr>
-          <th>Prompt</th>
-          <th>Output</th>
-          <th>Hegemony Summary</th>
-        </tr>
-      </thead>
-      <tbody>
+        <table class="table is-fullwidth is-bordered is-size-7">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Text</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Base</strong></td>
+              <td><pre class="wrapped-pre">{{ r.prompts.base }}</pre></td>
+            </tr>
+            <tr>
+              <td><strong>Identity</strong></td>
+              <td><pre class="wrapped-pre">{{ r.prompts.identity }}</pre></td>
+            </tr>
+          </tbody>
+        </table>
 
-        {% for kind in ["base", "identity"] %}
-        <tr>
-          <td><strong>{{ kind|capitalize }}</strong></td>
+        <hr>
 
-          <td>
-            <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
-          </td>
+        {% for model, model_data in r.outputs.items() %}
+        {% set idx = loop.index %}
+          <h3 class="title is-6">
+            Model {{ idx }} Outputs
+          </h3>
 
-          <td>
-            <ul>
-              {% for axis, data in model_data[kind].hegemony.items() %}
-                <li>
-                  {{ axis|capitalize }}: {{ data.present }}
-                  {% if data.present == "yes" and data.impact %}
-                    – {{ data.impact }}
-                  {% endif %}
-                </li>
+          <table class="table is-fullwidth is-bordered is-size-7">
+            <thead>
+              <tr>
+                <th>Prompt</th>
+                <th>Output</th>
+                <th>Hegemony Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+
+              {% for kind in ["base", "identity"] %}
+              <tr>
+                <td><strong>{{ kind|capitalize }}</strong></td>
+
+                <td>
+                  <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
+                </td>
+
+                <td>
+                  <ul>
+                    {% for axis, data in model_data[kind].hegemony.items() %}
+                      <li>
+                        {{ axis|capitalize }}: {{ data.present }}
+                        {% if data.present == "yes" and data.impact %}
+                          – {{ data.impact }}
+                        {% endif %}
+                      </li>
+                    {% endfor %}
+                  </ul>
+                </td>
+              </tr>
               {% endfor %}
-            </ul>
-          </td>
-        </tr>
+
+            </tbody>
+          </table>
+
+          <hr>
         {% endfor %}
 
-      </tbody>
-    </table>
+        <p class="mt-2">
+          <strong>Ground Truth</strong>
+        </p>
+        <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
 
-    <hr>
-  {% endfor %}
+        {% if r.references %}
+          <h4 class="title is-6">References</h4>
+          <pre class="wrapped-pre">{{ r.references }}</pre>
+        {% endif %}
 
-  <!-- ===== Ground Truth ===== -->
-  <p class="mt-2">
-    <strong>Ground Truth</strong>
-  </p>
-  <pre class="wrapped-pre">{{ r.ground_truth }}</pre>
+      </div>
+    </div>
+    {% endfor %}
 
-  <!-- ================= REFERENCES ================= -->
-  {% if r.references %}
-    <h4 class="title is-6">References</h4>
-    <pre class="wrapped-pre">{{ r.references }}</pre>
-  {% endif %}
-
-</div>
-{% endfor %}
+  </div>
+</section>
 
 {% endblock %}

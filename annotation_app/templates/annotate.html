@@ -2,126 +2,153 @@
 
 {% block content %}
 
-<h1 class="title">Annotation Task</h1>
-<p class="subtitle">
-This task evaluates cultural hegemony in LLM-generated responses across Indian States.
-</p>
-
-<form method="POST">
-
-  <!-- REGION / STATE -->
-  {% include "components/region_state.html" %}
-
-  <hr>
-
-  <!-- PROMPTS (SHARED ACROSS MODELS) -->
-  <div class="columns is-variable is-6">
-    <div class="column">
-      <label class="label">Base Prompt</label>
-      <textarea class="textarea"
-                name="base_prompt"
-                rows="3"
-                required>{{ draft.prompts.base if draft }}</textarea>
-    </div>
-
-    <div class="column">
-      <label class="label">Identity-Primed Prompt</label>
-      <textarea class="textarea"
-                name="identity_primed_prompt"
-                rows="3"
-                required>{{ draft.prompts.identity if draft }}</textarea>
-    </div>
-  </div>
-
-  <hr>
-
-  {% set models = [
-    {"key": "gemini", "js": "gemini",  "label": "Model 1"},
-    {"key": "gpt",    "js": "gpt", "label": "Model 2"},
-    {"key": "llama",  "js": "llama",   "label": "Model 3"},
-    {"key": "deepseek",  "js": "deepseek",   "label": "Model 4"}
-  ] %}
-
-  <!-- MODELS LOOP -->
-  {% for m in models %}
-    <h2 class="title is-4">{{ m.label }}</h2>
-
-    <div class="notification is-danger is-light mb-4" style="margin-top:-0.75rem;">
-      <strong>IMPORTANT NOTE:</strong>
-      Please check your prompt and use the <em>Generate</em> button <b>only once</b> per model per annotation to ensure no credits are wasted.
-    </div>
-
-    <div class="columns is-variable is-6">
-
-      {% for kind in ["base", "identity"] %}
-      <div class="column">
-
-        <button id="{{ m }}_generate_btn"
-                type="button"
-                class="button is-dark mb-3"
-                onclick="generateOutput('{{ m.js }}','{{ kind }}')">
-          Generate
-        </button>
-
-        <textarea class="textarea"
-                  id="{{ m.js }}_llm_output_{{ kind }}"
-                  name="{{ m.key }}_{{ kind }}_output"
-                  rows="20"
-                  readonly
-                  style="color: #1f4ed8;">
-{{ draft.outputs[m.key][kind].text if draft }}
-        </textarea>
-
-        <div class="notification is-light mt-2 p-3">
-          <label class="checkbox">
-            <input type="checkbox"
-                  name="{{ m.key }}_{{ kind }}_hallucination"
-                  value="yes"
-                  {% if draft and draft.outputs[m.key][kind].hallucination == "yes" %}
-                    checked
-                  {% endif %}>
-            <strong>Contains Hallucination</strong>
-          </label>
-        </div>
-
-        {% with model=m.key, kind=kind %}
-          {% include "components/hegemony_axes.html" %}
-        {% endwith %}
-
+<section class="section pt-1">
+  <div class="container">
+    <div class="card mb-5">
+      <div class="card-content">
+        <h1 class="title">Annotation Task</h1>
+        <p class="subtitle">
+          This task evaluates cultural hegemony in LLM-generated responses across Indian States.
+        </p>
       </div>
-      {% endfor %}
-
     </div>
-  {% endfor %}
 
-  <!-- GROUND TRUTH -->
-  <div class="field">
-    <label class="label">Ground Truth (100–200 words)</label>
-    <textarea class="textarea"
-              name="ground_truth"
-              rows="15"
-              required>{{ draft.ground_truth if draft }}</textarea>
+    <div class="card">
+      <div class="card-content">
+        <form method="POST">
+
+          <!-- REGION / STATE -->
+          <div class="card mb-5">
+            <div class="card-content">
+              {% include "components/region_state.html" %}
+            </div>
+          </div>
+
+          <!-- PROMPTS (SHARED ACROSS MODELS) -->
+          <div class="card mb-5">
+            <div class="card-content">
+              <div class="columns is-variable is-6">
+                <div class="column">
+                  <label class="label">Base Prompt</label>
+                  <textarea class="textarea"
+                            name="base_prompt"
+                            rows="3"
+                            required>{{ draft.prompts.base if draft }}</textarea>
+                </div>
+
+                <div class="column">
+                  <label class="label">Identity-Primed Prompt</label>
+                  <textarea class="textarea"
+                            name="identity_primed_prompt"
+                            rows="3"
+                            required>{{ draft.prompts.identity if draft }}</textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {% set models = [
+            {"key": "gemini", "js": "gemini",  "label": "Model 1"},
+            {"key": "gpt",    "js": "gpt", "label": "Model 2"},
+            {"key": "llama",  "js": "llama",   "label": "Model 3"},
+            {"key": "deepseek",  "js": "deepseek",   "label": "Model 4"}
+          ] %}
+
+          <!-- MODELS LOOP -->
+          {% for m in models %}
+            <div class="card mb-5">
+              <div class="card-content">
+                <h2 class="title is-4">{{ m.label }}</h2>
+
+                <div class="notification is-danger is-light mb-4" style="margin-top:-0.75rem;">
+                  <strong>IMPORTANT NOTE:</strong>
+                  Please check your prompt and use the <em>Generate</em> button <b>only once</b> per model per annotation to ensure no credits are wasted.
+                </div>
+
+                <div class="columns is-variable is-6">
+
+                  {% for kind in ["base", "identity"] %}
+                  <div class="column">
+                    <div class="card">
+                      <div class="card-content">
+                        <button id="{{ m }}_generate_btn"
+                                type="button"
+                                class="button is-dark mb-3"
+                                onclick="generateOutput('{{ m.js }}','{{ kind }}')">
+                          Generate
+                        </button>
+
+                        <textarea class="textarea"
+                                  id="{{ m.js }}_llm_output_{{ kind }}"
+                                  name="{{ m.key }}_{{ kind }}_output"
+                                  rows="20"
+                                  readonly
+                                  style="color: #1f4ed8;">
+{{ draft.outputs[m.key][kind].text if draft }}
+                        </textarea>
+
+                        <div class="notification is-light mt-2 p-3">
+                          <label class="checkbox">
+                            <input type="checkbox"
+                                  name="{{ m.key }}_{{ kind }}_hallucination"
+                                  value="yes"
+                                  {% if draft and draft.outputs[m.key][kind].hallucination == "yes" %}
+                                    checked
+                                  {% endif %}>
+                            <strong>Contains Hallucination</strong>
+                          </label>
+                        </div>
+
+                        {% with model=m.key, kind=kind %}
+                          {% include "components/hegemony_axes.html" %}
+                        {% endwith %}
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+
+          <!-- GROUND TRUTH -->
+          <div class="card mb-5">
+            <div class="card-content">
+              <div class="field">
+                <label class="label">Ground Truth (100–200 words)</label>
+                <textarea class="textarea"
+                          name="ground_truth"
+                          rows="15"
+                          required>{{ draft.ground_truth if draft }}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- REFERENCES -->
+          <div class="card mb-5">
+            <div class="card-content">
+              <div class="field">
+                <label class="label">References (links only)</label>
+                <textarea class="textarea"
+                          name="references"
+                          rows="3">{{ draft.references if draft }}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- SUBMIT -->
+          <div class="field has-text-right">
+            <button class="button is-info is-medium" type="submit">
+              Review Annotation →
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
   </div>
-
-    <hr>
-
-  <!-- REFERENCES -->
-  <div class="field">
-    <label class="label">References (links only)</label>
-    <textarea class="textarea"
-              name="references"
-              rows="3">{{ draft.references if draft }}</textarea>
-  </div>
-
-  <!-- SUBMIT -->
-  <div class="field has-text-right">
-    <button class="button is-info is-medium" type="submit">
-      Review Annotation →
-    </button>
-    <hr>
-  </div>
-
-</form>
+</section>
 
 {% endblock %}
 

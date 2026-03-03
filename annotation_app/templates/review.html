@@ -2,148 +2,161 @@
 
 {% block content %}
 
-<h1 class="title">Review Annotation</h1>
-<p class="subtitle">
-Verify all entries before final submission.
-</p>
+<section class="section pt-1">
+  <div class="container">
 
-<hr>
+    <div class="card mb-5">
+      <div class="card-content">
+        <h1 class="title">Review Annotation</h1>
+        <p class="subtitle mb-0">
+          Verify all entries before final submission.
+        </p>
+      </div>
+    </div>
 
-<!-- ================= REGION / STATE ================= -->
-<div class="box">
-  <strong>Name:</strong> {{ record.annotator_name }} <br>
-  <strong>Region:</strong> {{ record.region }} <br>
-  <strong>State:</strong> {{ record.state }}
-</div>
+    <div class="card mb-5">
+      <div class="card-content">
+        <strong>ID:</strong> {{ record.id }} <br>
+        <strong>Name:</strong> {{ record.annotator_name }} <br>
+        <strong>Region:</strong> {{ record.region }} <br>
+        <strong>State:</strong> {{ record.state }}
+      </div>
+    </div>
 
-<!-- ================= PROMPTS ================= -->
-<div class="box">
-  <h2 class="title is-6">Prompts</h2>
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-6">Prompts</h2>
 
-  <table class="table is-bordered is-fullwidth is-small">
-    <tr>
-      <th width="20%">Base Prompt</th>
-      <td><pre class="wrapped-pre">{{ record.prompts.base }}</pre></td>
-    </tr>
-    <tr>
-      <th>Identity-Primed Prompt</th>
-      <td><pre class="wrapped-pre">{{ record.prompts.identity }}</pre></td>
-    </tr>
-  </table>
-</div>
+        <table class="table is-bordered is-fullwidth is-small">
+          <tr>
+            <th width="20%">Base Prompt</th>
+            <td><pre class="wrapped-pre">{{ record.prompts.base }}</pre></td>
+          </tr>
+          <tr>
+            <th>Identity-Primed Prompt</th>
+            <td><pre class="wrapped-pre">{{ record.prompts.identity }}</pre></td>
+          </tr>
+        </table>
+      </div>
+    </div>
 
-<!-- ================= MODELS LOOP ================= -->
-{% for model_key, model_data in record.outputs.items() %}
-{% set idx = loop.index %}
+    {% for model_key, model_data in record.outputs.items() %}
+    {% set idx = loop.index %}
 
-<div class="box">
-  <h2 class="title is-5">Model {{ idx }} — Review</h2>
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Model {{ idx }} Review</h2>
 
-  <!-- ===== OUTPUTS ===== -->
-  <table class="table is-bordered is-fullwidth is-small">
-    <thead>
-      <tr>
-        <th width="15%"></th>
-        <th>Base Output</th>
-        <th>Identity-Primed Output</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <th>Text</th>
-        <td><pre class="wrapped-pre">{{ model_data.base.text }}</pre></td>
-        <td><pre class="wrapped-pre">{{ model_data.identity.text }}</pre></td>
-      </tr>
+        <table class="table is-bordered is-fullwidth is-small">
+          <thead>
+            <tr>
+              <th width="15%"></th>
+              <th>Base Output</th>
+              <th>Identity-Primed Output</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th>Text</th>
+              <td><pre class="wrapped-pre">{{ model_data.base.text }}</pre></td>
+              <td><pre class="wrapped-pre">{{ model_data.identity.text }}</pre></td>
+            </tr>
 
-      <tr>
-        <th>Contains Hallucination</th>
+            <tr>
+              <th>Contains Hallucination</th>
 
-        <td>
-          {% if model_data.base.hallucination == "yes" %}
-            <span>Yes</span>
-          {% else %}
-            <span>No</span>
-          {% endif %}
-        </td>
+              <td>
+                {% if model_data.base.hallucination == "yes" %}
+                  <span>Yes</span>
+                {% else %}
+                  <span>No</span>
+                {% endif %}
+              </td>
 
-        <td>
-          {% if model_data.identity.hallucination == "yes" %}
-            <span>Yes</span>
-          {% else %}
-            <span>No</span>
-          {% endif %}
-        </td>
-      </tr>
-    </tbody>
-  </table>
+              <td>
+                {% if model_data.identity.hallucination == "yes" %}
+                  <span>Yes</span>
+                {% else %}
+                  <span>No</span>
+                {% endif %}
+              </td>
+            </tr>
+          </tbody>
+        </table>
 
-  <!-- ===== HEGEMONY ===== -->
-  <h3 class="title is-6 mt-4">Hegemony Annotation</h3>
+        <h3 class="title is-6 mt-4">Hegemony Annotation</h3>
 
-  <table class="table is-bordered is-fullwidth is-small">
-    <thead>
-      <tr>
-        <th>Axis</th>
-        <th>Base</th>
-        <th>Identity</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for axis in ["social","economic","religious","gender","linguistic","colorism"] %}
-      <tr>
-        <th>{{ axis|capitalize }}</th>
+        <table class="table is-bordered is-fullwidth is-small">
+          <thead>
+            <tr>
+              <th>Axis</th>
+              <th>Base</th>
+              <th>Identity</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for axis in ["social","economic","religious","gender","linguistic","colorism"] %}
+            <tr>
+              <th>{{ axis|capitalize }}</th>
 
-        <td>
-          {{ model_data.base.hegemony[axis].present }}
-          {% if model_data.base.hegemony[axis].impact %}
-            — {{ model_data.base.hegemony[axis].impact }}
-          {% endif %}
-        </td>
+              <td>
+                {{ model_data.base.hegemony[axis].present }}
+                {% if model_data.base.hegemony[axis].impact %}
+                  — {{ model_data.base.hegemony[axis].impact }}
+                {% endif %}
+              </td>
 
-        <td>
-          {{ model_data.identity.hegemony[axis].present }}
-          {% if model_data.identity.hegemony[axis].impact %}
-            — {{ model_data.identity.hegemony[axis].impact }}
-          {% endif %}
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+              <td>
+                {{ model_data.identity.hegemony[axis].present }}
+                {% if model_data.identity.hegemony[axis].impact %}
+                  — {{ model_data.identity.hegemony[axis].impact }}
+                {% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
 
-</div>
+    {% endfor %}
 
-{% endfor %}
-  <!-- ===== GROUND TRUTH ===== -->
-  <div class="box">
-  <h2 class="title is-6">Ground Truth</h2>
-  <pre class="wrapped-pre">{{ record.ground_truth }}</pre>
-</div>
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-6">Ground Truth</h2>
+        <pre class="wrapped-pre">{{ record.ground_truth }}</pre>
+      </div>
+    </div>
 
-<!-- ================= REFERENCES ================= -->
-<div class="box">
-  <h2 class="title is-6">References</h2>
-  <pre class="wrapped-pre">{{ record.references }}</pre>
-</div>
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-6">References</h2>
+        <pre class="wrapped-pre">{{ record.references }}</pre>
+      </div>
+    </div>
 
-<hr>
+    <div class="card">
+      <div class="card-content">
+        <div class="columns is-vcentered">
+          <div class="column">
+            <a href="{{ url_for('annotate') }}" class="button is-dark is-medium">
+              ← Edit
+            </a>
+          </div>
 
-<!-- ================= ACTIONS ================= -->
-<div class="columns is-vcentered">
-  <div class="column">
-    <a href="{{ url_for('annotate') }}" class="button is-dark is-medium">
-      ← Edit
-    </a>
+          <div class="column has-text-right">
+            <form method="POST" action="{{ url_for('confirm') }}">
+              <input type="hidden" name="record" value='{{ record | tojson }}'>
+              <button class="button is-success is-medium" type="submit">
+                Confirm & Submit →
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
-
-  <div class="column has-text-right">
-    <form method="POST" action="{{ url_for('confirm') }}">
-      <input type="hidden" name="record" value='{{ record | tojson }}'>
-      <button class="button is-success is-medium" type="submit">
-        Confirm & Submit →
-      </button>
-    </form>
-  </div>
-</div>
+</section>
 
 {% endblock %}
