@@ -196,42 +196,5 @@ def generate_deepseek():
 def references():
     return render_template("references.html")
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        # ---- ADMIN LOGIN ----
-        if (
-            username == KEYS["ADMIN_USERNAME"] and
-            check_password_hash(KEYS["ADMIN_PASSWORD_HASH"], password)
-        ):
-            session["user"] = {
-                "username": username,
-                "role": "admin"
-            }
-            return redirect(url_for("annotate"))
-
-        # ---- ANNOTATOR LOGIN ----
-        if (
-            username == KEYS["ANNOTATOR_USERNAME"] and
-            check_password_hash(KEYS["ANNOTATOR_PASSWORD_HASH"], password)
-        ):
-            session["user"] = {
-                "username": username,
-                "role": "annotator"
-            }
-            return redirect(url_for("annotate"))
-
-        return render_template("login.html", error="Invalid credentials")
-
-    return render_template("login.html")
-
-@app.route("/logout")
-def logout():
-    session.clear()
-    return redirect(url_for("login"))
-
 if __name__ == "__main__":
     app.run(debug=True)
