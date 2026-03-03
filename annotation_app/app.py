@@ -83,7 +83,9 @@ def examples():
 @app.route("/confirm", methods=["POST"])
 @login_required
 def confirm():
+
     draft_id = session.pop("draft_id", None)
+    editing_id = session.pop("editing_id", None)
 
     if not draft_id:
         abort(400)
@@ -91,12 +93,27 @@ def confirm():
     record = load_draft(draft_id)
     delete_draft(draft_id)
 
-    write_jsonl(record)
+    if editing_id:
+        record["id"] = editing_id
 
-    try:
+        # Update JSONL
+        records = load_records()
+        updated_records = []
+
+        for r in records:
+            if r["id"] == editing_id:
+                updated_records.append(record)
+            else:
+                updated_records.append(r)
+
+        rewrite_jsonl(updated_records)
+
+        # 🔥 Update single row in Sheets
+        update_row_by_id(editing_id, json_to_row(record))
+
+    else:
+        write_jsonl(record)
         append_row(json_to_row(record))
-    except Exception as e:
-        print("Sheets write failed:", e)
 
     return redirect("/")
 
@@ -195,6 +212,32 @@ def generate_deepseek():
 @app.route("/references")
 def references():
     return render_template("references.html")
+
+@app.route("/load-annotation", methods=["GET", "POST"])
+@login_required
+def load_annotation():
+
+    if request.method == "POST":
+        annotation_id = request.form.get("annotation_id", "").strip()
+
+        if not annotation_id:
+            return render_template("load_annotation.html", error="Please enter a valid ID")
+
+        records = load_records()
+
+        for record in records:
+            if record["id"] == annotation_id:
+
+                # Save as draft
+                draft_id = save_draft(record)
+                session["draft_id"] = draft_id
+                session["editing_id"] = annotation_id
+
+                return redirect(url_for("annotate"))
+
+        return render_template("load_annotation.html", error="Annotation ID not found")
+
+    return render_template("load_annotation.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

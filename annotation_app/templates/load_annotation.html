@@ -1,0 +1,40 @@
+{% extends "layout/base.html" %}
+
+{% block content %}
+
+<section class="section is-flex is-align-items-center is-justify-content-center">
+
+  <div class="box" style="width: 500px;">
+
+    <h1 class="title is-4">Load Annotation</h1>
+
+    {% if error %}
+      <div class="notification is-danger is-light">
+        {{ error }}
+      </div>
+    {% endif %}
+
+    <form method="POST">
+
+      <div class="field">
+        <label class="label">Annotation ID</label>
+        <input class="input"
+               type="text"
+               name="annotation_id"
+               placeholder="Enter annotation ID"
+               required>
+      </div>
+
+      <div class="field mt-4">
+        <button class="button is-dark is-fullwidth">
+          Load & Edit →
+        </button>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+{% endblock %}

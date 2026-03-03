@@ -229,6 +229,13 @@
             Review
         </a>
 
+        <!-- Load -->
+        <a class="navbar-item nav-link"
+        href="{{ url_for('load_annotation') }}"
+        target="_blank">
+        Load
+        </a>
+
         <!-- Examples -->
         <a class="navbar-item nav-link
             {% if request.endpoint == 'examples' %}

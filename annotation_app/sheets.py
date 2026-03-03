@@ -98,3 +98,43 @@ def rebuild_sheet_from_records(records):
             )
 
     _worksheet.append_rows(rows, value_input_option="RAW")
+
+def update_row_by_id(record_id: str, row: list):
+    """
+    Update a single row in both primary and backup sheets
+    based on annotation ID (column 1).
+    """
+
+    if len(row) != len(HEADERS):
+        raise ValueError(
+            f"Row length {len(row)} != header length {len(HEADERS)}"
+        )
+
+    # -------- PRIMARY --------
+    cell = _worksheet.find(record_id)
+
+    if not cell:
+        raise ValueError(f"Record ID {record_id} not found in primary sheet")
+
+    row_number = cell.row
+
+    _worksheet.update(
+        f"A{row_number}:{gspread.utils.rowcol_to_a1(row_number, len(HEADERS))}",
+        [row],
+        value_input_option="RAW"
+    )
+
+    # -------- BACKUP --------
+    try:
+        backup_ws = _client.open(SHEET_NAME).worksheet(BACKUP_SHEET)
+        backup_cell = backup_ws.find(record_id)
+
+        if backup_cell:
+            backup_row_number = backup_cell.row
+            backup_ws.update(
+                f"A{backup_row_number}:{gspread.utils.rowcol_to_a1(backup_row_number, len(HEADERS))}",
+                [row],
+                value_input_option="RAW"
+            )
+    except Exception as e:
+        print("⚠️ Backup update failed:", e)

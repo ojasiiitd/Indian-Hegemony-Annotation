@@ -5,3 +5,4 @@ annotation_app/__pycache__/
 annotation_app/__pycache__/*.pyc
 annotation_app/data/
 .DS_Store
+annotators.json
