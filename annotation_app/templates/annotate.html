@@ -72,6 +72,18 @@ This task evaluates cultural hegemony in LLM-generated responses across Indian S
 {{ draft.outputs[m.key][kind].text if draft }}
         </textarea>
 
+        <div class="notification is-light mt-2 p-3">
+          <label class="checkbox">
+            <input type="checkbox"
+                  name="{{ m.key }}_{{ kind }}_hallucination"
+                  value="yes"
+                  {% if draft and draft.outputs[m.key][kind].hallucination == "yes" %}
+                    checked
+                  {% endif %}>
+            <strong>Contains Hallucination</strong>
+          </label>
+        </div>
+
         {% with model=m.key, kind=kind %}
           {% include "components/hegemony_axes.html" %}
         {% endwith %}

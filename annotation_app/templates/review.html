@@ -54,6 +54,26 @@ Verify all entries before final submission.
         <td><pre class="wrapped-pre">{{ model_data.base.text }}</pre></td>
         <td><pre class="wrapped-pre">{{ model_data.identity.text }}</pre></td>
       </tr>
+
+      <tr>
+        <th>Contains Hallucination</th>
+
+        <td>
+          {% if model_data.base.hallucination == "yes" %}
+            <span>Yes</span>
+          {% else %}
+            <span>No</span>
+          {% endif %}
+        </td>
+
+        <td>
+          {% if model_data.identity.hallucination == "yes" %}
+            <span>Yes</span>
+          {% else %}
+            <span>No</span>
+          {% endif %}
+        </td>
+      </tr>
     </tbody>
   </table>
 

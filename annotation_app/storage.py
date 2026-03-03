@@ -83,74 +83,75 @@ def extract_hegemony(form, prefix):
 def build_record(form):
     print("BUILDING 🪭🪭🪭🪭🪭🪭 RECORD")
     return {
-        "id": str(uuid.uuid4()),
-        "timestamp": datetime.utcnow().isoformat(),
+            "id": str(uuid.uuid4()),
+            "timestamp": datetime.utcnow().isoformat(),
 
-        "annotator_name": form["annotator_name"],
-        "region": form["region"],
-        "state": form["state"],
+            "annotator_name": form["annotator_name"],
+            "region": form["region"],
+            "state": form["state"],
 
-        "prompts": {
-            "base": form.get("base_prompt"),
-            "identity": form.get("identity_primed_prompt"),
-        },
-
-        "outputs": {
-            "gemini": {
-                "base": {
-                    "text": form.get("gemini_base_output"),
-                    "hegemony": extract_hegemony(form, "gemini_base")
-                },
-                "identity": {
-                    "text": form.get("gemini_identity_output"),
-                    "hegemony": extract_hegemony(form, "gemini_identity")
-                },
+            "prompts": {
+                "base": form.get("base_prompt"),
+                "identity": form.get("identity_primed_prompt"),
             },
-            "gpt": {
-                "base": {
-                    "text": form.get("gpt_base_output"),
-                    "hegemony": extract_hegemony(form, "gpt_base")
-                },
-                "identity": {
-                    "text": form.get("gpt_identity_output"),
-                    "hegemony": extract_hegemony(form, "gpt_identity")
-                },
-            },
-            "llama": {
-                "base": {
-                    "text": form.get("llama_base_output"),
-                    "hegemony": extract_hegemony(form, "llama_base")
-                },
-                "identity": {
-                    "text": form.get("llama_identity_output"),
-                    "hegemony": extract_hegemony(form, "llama_identity")
-                },
-            },
-            "deepseek": {
-                "base": {
-                    "text": form.get("deepseek_base_output"),
-                    "hegemony": extract_hegemony(form, "deepseek_base")
-                },
-                "identity": {
-                    "text": form.get("deepseek_identity_output"),
-                    "hegemony": extract_hegemony(form, "deepseek_identity")
-                },
-            }
-        },
-        "ground_truth": form.get("ground_truth"),
-        "references": form.get("references", "")
-    }
 
-# Sample Record
-# {'id': '6be846a7-6b72-4a2e-be59-16697d592778', 'timestamp': '2026-01-16T07:00:07.407092', 'region': 'South', 'state': 'Andhra Pradesh', 
-# 'prompts': {'base': 'sdfsgdh', 'identity': 'as a abc, sdfsgdh'}, 
-# 'outputs': 
-# {'gemini': 
-#   {'base': 
-#       {'text': '[Model1 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 
-#       'hegemony': {'social': {'present': 'yes', 'impact': 's1'}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 
-#   'identity': {'text': '[Model1 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'yes', 'impact': 's1'}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': '1'}, 'gpt': {'base': {'text': '[Model2 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'yes', 'impact': 'e1'}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'identity': {'text': '[Model2 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'yes', 'impact': 'e1'}, 'religious': {'present': 'no', 'impact': ''}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': None}, 'llama': {'base': {'text': '[Model3 output placeholder]\r\n\r\nsdfsgdh\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'yes', 'impact': 'r1'}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'identity': {'text': '[Model3 output placeholder]\r\n\r\ngtdfds\r\n        ', 'hegemony': {'social': {'present': 'no', 'impact': ''}, 'economic': {'present': 'no', 'impact': ''}, 'religious': {'present': 'yes', 'impact': 'r1'}, 'gender': {'present': 'no', 'impact': ''}, 'linguistic': {'present': 'no', 'impact': ''}, 'colorism': {'present': 'no', 'impact': ''}}}, 'ground_truth': '3'}}, 'references': '123'}
+            "outputs": {
+                "gemini": {
+                    "base": {
+                        "text": form.get("gemini_base_output"),
+                        "hallucination": "yes" if form.get("gemini_base_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "gemini_base")
+                    },
+                    "identity": {
+                        "text": form.get("gemini_identity_output"),
+                        "hallucination": "yes" if form.get("gemini_identity_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "gemini_identity")
+                    },
+                },
 
+                "gpt": {
+                    "base": {
+                        "text": form.get("gpt_base_output"),
+                        "hallucination": "yes" if form.get("gpt_base_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "gpt_base")
+                    },
+                    "identity": {
+                        "text": form.get("gpt_identity_output"),
+                        "hallucination": "yes" if form.get("gpt_identity_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "gpt_identity")
+                    },
+                },
+
+                "llama": {
+                    "base": {
+                        "text": form.get("llama_base_output"),
+                        "hallucination": "yes" if form.get("llama_base_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "llama_base")
+                    },
+                    "identity": {
+                        "text": form.get("llama_identity_output"),
+                        "hallucination": "yes" if form.get("llama_identity_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "llama_identity")
+                    },
+                },
+
+                "deepseek": {
+                    "base": {
+                        "text": form.get("deepseek_base_output"),
+                        "hallucination": "yes" if form.get("deepseek_base_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "deepseek_base")
+                    },
+                    "identity": {
+                        "text": form.get("deepseek_identity_output"),
+                        "hallucination": "yes" if form.get("deepseek_identity_hallucination") == "yes" else "no",
+                        "hegemony": extract_hegemony(form, "deepseek_identity")
+                    },
+                }
+            },
+
+            "ground_truth": form.get("ground_truth"),
+            "references": form.get("references", "")
+        }
 
 # =====================================================
 # GOOGLE SHEETS FLATTENING
@@ -178,15 +179,24 @@ def json_to_row(record):
         """
         block = {
           "text": "...",
+          "hallucination": "...",
           "hegemony": {
-              axis: { "present": "yes/no", "impact": str|None }
+              axis: { "present": "yes/no", "impact": str }
           }
         }
         """
-        row.append(block["text"])
+
+        # 1️⃣ text
+        row.append(block.get("text", ""))
+
+        # 2️⃣ hallucination
+        row.append(block.get("hallucination", ""))
+
+        # 3️⃣ hegemony axes
         for axis in HEGEMONY_AXES:
-            row.append(block["hegemony"][axis]["present"])
-            row.append(block["hegemony"][axis]["impact"])
+            axis_data = block["hegemony"].get(axis, {})
+            row.append(axis_data.get("present", "no"))
+            row.append(axis_data.get("impact", ""))
 
     # ========= GEMINI =========
     append_output(record["outputs"]["gemini"]["base"])
@@ -199,14 +209,15 @@ def json_to_row(record):
     # ========= LLAMA =========
     append_output(record["outputs"]["llama"]["base"])
     append_output(record["outputs"]["llama"]["identity"])
-    
+
     # ========= DeepSeek =========
     append_output(record["outputs"]["deepseek"]["base"])
     append_output(record["outputs"]["deepseek"]["identity"])
 
-    row.append(record["ground_truth"])
+    # --- ground truth ---
+    row.append(record.get("ground_truth", ""))
 
     # --- references ---
-    row.append(record["references"])
+    row.append(record.get("references", ""))
 
     return row

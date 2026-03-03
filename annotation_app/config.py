@@ -4,10 +4,11 @@ import json
 DATA_FILE = "annotation_app/static/annotations.jsonl"
 
 REGION_STATE_MAP = {
-    "East": ["West Bengal"],
-    "North": ["Uttar Pradesh", "Bihar"],
-    "South": ["Andhra Pradesh", "Telangana"],
-    "West": ["Maharashtra", "Gujarat"]
+    "East": ["West Bengal", "Arunachal Pradesh", "Assam", "Jharkhand", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Sikkim", "Tripura"],
+    "North": ["Uttar Pradesh", "Bihar", "Harayana", "Himachal Pradesh", "Punjab", "Rajasthan", "Uttarakhand", "Jammu and Kashmir", "Ladakh"],
+	"Central": ["Madhya Pradesh", "Chhattisgarh"],
+    "South": ["Andhra Pradesh", "Telangana", "Karnataka", "Kerala", "Tamil Nadu"],
+    "West": ["Maharashtra", "Gujarat", "Goa"]
 }
 
 HEGEMONY_AXES = [
@@ -27,6 +28,7 @@ API_KEYS_PATH = "annotation_app/accounts/apikeys.json"
 with open(API_KEYS_PATH, "r") as f:
 	KEYS = json.load(f)
 
+# llama is actually GPT-OSS
 HEADERS = [
 	# --- metadata ---
 	"id",
@@ -41,6 +43,7 @@ HEADERS = [
 
 	# === GEMINI BASE ===
 	"gemini_base_output",
+	"gemini_base_hallucination",
 	"gemini_base_social",
 	"gemini_base_social_impact",
 	"gemini_base_economic",
@@ -56,6 +59,7 @@ HEADERS = [
 
 	# === GEMINI IDENTITY ===
 	"gemini_identity_output",
+	"gemini_identity_hallucination",
 	"gemini_identity_social",
 	"gemini_identity_social_impact",
 	"gemini_identity_economic",
@@ -71,6 +75,7 @@ HEADERS = [
 
 	# === GPT BASE ===
 	"gpt_base_output",
+	"gpt_base_hallucination",
 	"gpt_base_social",
 	"gpt_base_social_impact",
 	"gpt_base_economic",
@@ -86,6 +91,7 @@ HEADERS = [
 
 	# === GPT IDENTITY ===
 	"gpt_identity_output",
+	"gpt_identity_hallucination",
 	"gpt_identity_social",
 	"gpt_identity_social_impact",
 	"gpt_identity_economic",
@@ -101,6 +107,7 @@ HEADERS = [
 
 	# === LLAMA BASE ===
 	"llama_base_output",
+	"llama_base_hallucination",
 	"llama_base_social",
 	"llama_base_social_impact",
 	"llama_base_economic",
@@ -116,6 +123,7 @@ HEADERS = [
 
 	# === LLAMA IDENTITY ===
 	"llama_identity_output",
+	"llama_identity_hallucination",
 	"llama_identity_social",
 	"llama_identity_social_impact",
 	"llama_identity_economic",
@@ -131,6 +139,7 @@ HEADERS = [
 
 	# === DEEPSEEK BASE ===
 	"deepseek_base_output",
+	"deepseek_base_hallucination",
 	"deepseek_base_social",
 	"deepseek_base_social_impact",
 	"deepseek_base_economic",
@@ -146,6 +155,7 @@ HEADERS = [
 
 	# === DEEPSEEK IDENTITY ===
 	"deepseek_identity_output",
+	"deepseek_identity_hallucination",
 	"deepseek_identity_social",
 	"deepseek_identity_social_impact",
 	"deepseek_identity_economic",
