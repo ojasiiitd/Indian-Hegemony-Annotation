@@ -2,6 +2,7 @@ import gspread
 from google.oauth2.service_account import Credentials
 from config import *
 from storage import *
+from gspread.exceptions import WorksheetNotFound
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -15,8 +16,26 @@ _creds = Credentials.from_service_account_file(
 
 MAIN_SHEET = "testing"
 BACKUP_SHEET = "testing2"
+REVIEW_SHEET = "testreview"
 
 #---- for change on pythonanywhere
+
+REVIEW_HEADERS = [
+    "review_id",
+    "annotation_id",
+    "reviewer_username",
+    "region",
+    "state",
+    "model",
+    "prompt_type",
+    "Q0_hegemony_present",
+    "Q1_axes_correct",
+    "Q2_impact_correct",
+    "Q3_severity",
+    "ground_truth_rating",
+    "needs_adjudication",
+    "timestamp",
+]
 
 _client = gspread.authorize(_creds)
 _worksheet = _client.open(SHEET_NAME).worksheet(MAIN_SHEET)
@@ -92,6 +111,129 @@ def load_records_from_sheet() -> list:
             records.append(record)
 
     return records
+
+
+def _get_or_create_review_worksheet():
+    spreadsheet = _client.open(SHEET_NAME)
+
+    try:
+        worksheet = spreadsheet.worksheet(REVIEW_SHEET)
+    except WorksheetNotFound:
+        worksheet = spreadsheet.add_worksheet(
+            title=REVIEW_SHEET,
+            rows=2000,
+            cols=max(len(REVIEW_HEADERS), 16)
+        )
+        worksheet.update("A1", [REVIEW_HEADERS], value_input_option="RAW")
+        return worksheet
+
+    header_values = worksheet.row_values(1)
+    if not header_values:
+        worksheet.update("A1", [REVIEW_HEADERS], value_input_option="RAW")
+
+    return worksheet
+
+
+def append_review_rows(rows: list):
+    if not rows:
+        return
+
+    for row in rows:
+        if len(row) != len(REVIEW_HEADERS):
+            raise ValueError(
+                f"Review row length {len(row)} != header length {len(REVIEW_HEADERS)}"
+            )
+
+    worksheet = _get_or_create_review_worksheet()
+    worksheet.append_rows(rows, value_input_option="RAW")
+
+
+def _normalize_header_name(value: str) -> str:
+    return str(value).strip().lower().replace(" ", "_")
+
+
+def _resolve_review_indices(values: list):
+    """
+    Resolve annotation/reviewer column indices even if header names vary
+    (or if the sheet has no header row).
+    Returns: (annotation_idx, reviewer_idx, data_rows)
+    """
+    if not values:
+        return None, None, []
+
+    first_row = values[0]
+    normalized_first_row = [_normalize_header_name(v) for v in first_row]
+
+    if "annotation_id" in normalized_first_row:
+        annotation_idx = normalized_first_row.index("annotation_id")
+        if "reviewer_username" in normalized_first_row:
+            reviewer_idx = normalized_first_row.index("reviewer_username")
+        else:
+            reviewer_idx = REVIEW_HEADERS.index("reviewer_username")
+        return annotation_idx, reviewer_idx, values[1:]
+
+    # Fallback: treat entire sheet as data with default column order
+    annotation_idx = REVIEW_HEADERS.index("annotation_id")
+    reviewer_idx = REVIEW_HEADERS.index("reviewer_username")
+    return annotation_idx, reviewer_idx, values
+
+
+def get_reviewed_annotation_ids_by_user(username: str) -> set:
+    worksheet = _get_or_create_review_worksheet()
+    values = worksheet.get_all_values()
+
+    if not values:
+        return set()
+
+    annotation_idx, reviewer_idx, data_rows = _resolve_review_indices(values)
+    if annotation_idx is None or reviewer_idx is None:
+        return set()
+
+    reviewed_ids = set()
+    for row in data_rows:
+        if len(row) <= max(annotation_idx, reviewer_idx):
+            continue
+        if row[reviewer_idx].strip() == username and row[annotation_idx].strip():
+            reviewed_ids.add(row[annotation_idx].strip())
+
+    return reviewed_ids
+
+
+def get_completed_review_counts_by_annotation(rows_per_reviewer: int = 9) -> dict:
+    """
+    Return {annotation_id: completed_reviewer_count}.
+    A completed review is counted per `rows_per_reviewer` rows.
+    """
+    worksheet = _get_or_create_review_worksheet()
+    values = worksheet.get_all_values()
+
+    if not values:
+        return {}
+
+    # Resolve annotation_id column robustly, even if header is missing/altered.
+    first_row = values[0]
+    normalized_first_row = [_normalize_header_name(v) for v in first_row]
+
+    if "annotation_id" in normalized_first_row:
+        annotation_idx = normalized_first_row.index("annotation_id")
+        data_rows = values[1:]
+    else:
+        annotation_idx = REVIEW_HEADERS.index("annotation_id")
+        data_rows = values
+
+    raw_counts = {}
+    for row in data_rows:
+        if len(row) <= annotation_idx:
+            continue
+        annotation_id = row[annotation_idx].strip()
+        if not annotation_id:
+            continue
+        raw_counts[annotation_id] = raw_counts.get(annotation_id, 0) + 1
+
+    return {
+        annotation_id: (row_count // rows_per_reviewer)
+        for annotation_id, row_count in raw_counts.items()
+    }
 
 
 def append_row(row: list):

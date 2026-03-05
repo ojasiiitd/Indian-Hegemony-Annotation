@@ -221,6 +221,12 @@
         background-color: #eef3ff;
     }
 
+    .sticky-prompts {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+    }
+
     /* NAV LINK BASE */
     .navbar {
         margin: 1rem auto 1.8rem !important;
@@ -324,6 +330,10 @@
     }
 
     @media (max-width: 1023px) {
+        .sticky-prompts {
+            position: static;
+        }
+
         .navbar {
             border-radius: 0;
             margin: 0 0 1.2rem !important;
@@ -357,23 +367,22 @@
             {% if request.endpoint in ['annotate','freshannotate'] %}
                 nav-active
             {% endif %}"
-            href="{{ url_for('freshannotate') }}"
-            target="_blank">
+            href="{{ url_for('freshannotate') }}">
             Annotate
         </a>
 
-        <!-- Review (Disabled) -->
-        <a class="navbar-item nav-link is-disabled
-            {% if request.endpoint == 'records' %}
+        <!-- Review -->
+        <a class="navbar-item nav-link
+            {% if request.endpoint in ['prompt_review', 'review_annotation'] %}
                 nav-active
-            {% endif %}">
+            {% endif %}"
+            href="{{ url_for('prompt_review') }}">
             Review
         </a>
 
         <!-- Load -->
         <a class="navbar-item nav-link"
-        href="{{ url_for('load_annotation') }}"
-        target="_blank">
+        href="{{ url_for('load_annotation') }}">
         Load
         </a>
 
@@ -383,8 +392,7 @@
             {% if request.endpoint == 'admin' %}
                 nav-active-admin
             {% endif %}"
-            href="{{ url_for('admin') }}"
-            target="_blank">
+            href="{{ url_for('admin') }}">
             Admin
         </a>
         {% endif %}

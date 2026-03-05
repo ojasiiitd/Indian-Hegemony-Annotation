@@ -11,6 +11,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
 from auth import auth_bp
 from draft_store import *
+from datetime import datetime
+import uuid
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
@@ -65,7 +67,162 @@ def annotate():
 @app.route("/promptreview")
 @login_required
 def prompt_review():
-    return "Hello"
+    user = session["user"]
+
+    if user.get("role") != "annotator":
+        return render_template(
+            "review_list.html",
+            records=[],
+            review_counts={},
+            info="IAA review is available only for annotators."
+        )
+
+    try:
+        records = load_records_from_sheet()
+        reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
+        review_counts = get_completed_review_counts_by_annotation(rows_per_reviewer=9)
+    except Exception as e:
+        return render_template(
+            "review_list.html",
+            records=[],
+            review_counts={},
+            error=f"Could not load review queue from Google Sheets: {e}"
+        )
+
+    reviewable = [
+        r for r in records
+        if r.get("state") == user.get("state")
+        and r.get("region") == user.get("region")
+        and r.get("annotator_name") != user.get("username")
+        and r.get("id") not in reviewed_ids
+    ]
+
+    return render_template(
+        "review_list.html",
+        records=reviewable,
+        review_counts=review_counts
+    )
+
+
+@app.route("/review/<annotation_id>")
+@login_required
+def review_annotation(annotation_id):
+    user = session["user"]
+
+    if user.get("role") != "annotator":
+        abort(403)
+
+    records = load_records_from_sheet()
+    record = next((r for r in records if r.get("id") == annotation_id), None)
+
+    if not record:
+        abort(404)
+
+    if (
+        record.get("state") != user.get("state")
+        or record.get("region") != user.get("region")
+        or record.get("annotator_name") == user.get("username")
+    ):
+        abort(403)
+
+    reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
+    if annotation_id in reviewed_ids:
+        return redirect(url_for("prompt_review"))
+
+    models = [
+        ("gemini", "Model 1"),
+        ("gpt", "Model 2"),
+        ("llama", "Model 3"),
+        ("deepseek", "Model 4"),
+    ]
+
+    return render_template(
+        "review_annotation.html",
+        record=record,
+        models=models
+    )
+
+
+def _build_review_rows(form, user):
+    annotation_id = form.get("annotation_id", "").strip()
+    timestamp = datetime.utcnow().isoformat()
+    needs_adjudication = form.get("needs_adjudication", "no")
+    ground_truth_rating = form.get("ground_truth_rating", "unsure")
+
+    rows = []
+    for model in ["gemini", "gpt", "llama", "deepseek"]:
+        for prompt_type in ["base", "identity"]:
+            prefix = f"{model}_{prompt_type}"
+            rows.append([
+                str(uuid.uuid4()),
+                annotation_id,
+                user["username"],
+                user.get("region", ""),
+                user.get("state", ""),
+                model,
+                prompt_type,
+                form.get(f"{prefix}_q0", "unsure"),
+                form.get(f"{prefix}_q1", "unsure"),
+                form.get(f"{prefix}_q2", "unsure"),
+                form.get(f"{prefix}_q3", "medium"),
+                "",
+                needs_adjudication,
+                timestamp,
+            ])
+
+    rows.append([
+        str(uuid.uuid4()),
+        annotation_id,
+        user["username"],
+        user.get("region", ""),
+        user.get("state", ""),
+        "ground_truth",
+        "ground_truth",
+        "",
+        "",
+        "",
+        "",
+        ground_truth_rating,
+        needs_adjudication,
+        timestamp,
+    ])
+
+    return rows
+
+
+@app.route("/submit_review", methods=["POST"])
+@login_required
+def submit_review():
+    user = session["user"]
+
+    if user.get("role") != "annotator":
+        abort(403)
+
+    annotation_id = request.form.get("annotation_id", "").strip()
+    if not annotation_id:
+        abort(400)
+
+    records = load_records_from_sheet()
+    record = next((r for r in records if r.get("id") == annotation_id), None)
+
+    if not record:
+        abort(404)
+
+    if (
+        record.get("state") != user.get("state")
+        or record.get("region") != user.get("region")
+        or record.get("annotator_name") == user.get("username")
+    ):
+        abort(403)
+
+    reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
+    if annotation_id in reviewed_ids:
+        return redirect(url_for("prompt_review"))
+
+    review_rows = _build_review_rows(request.form, user)
+    append_review_rows(review_rows)
+
+    return redirect(url_for("prompt_review"))
 
 
 @app.route("/freshannotate")
@@ -232,11 +389,14 @@ def load_annotation():
     user = session["user"]["username"]
     try:
         records = load_records_from_sheet()
+        review_counts = get_completed_review_counts_by_annotation(rows_per_reviewer=9)
+        print("REVIEW COUNTS" , review_counts)
     except Exception as e:
         return render_template(
             "load_annotation.html",
             error=f"Could not load annotations from Google Sheets: {e}",
-            user_records=[]
+            user_records=[],
+            review_counts={}
         )
 
     # 🔒 Only current annotator's records (admins see all)
@@ -255,11 +415,19 @@ def load_annotation():
             return render_template(
                 "load_annotation.html",
                 error="Please enter a valid ID",
-                user_records=user_records
+                user_records=user_records,
+                review_counts=review_counts
             )
 
         for record in records:
             if record["id"] == annotation_id:
+                if review_counts.get(annotation_id, 0) >= 1:
+                    return render_template(
+                        "load_annotation.html",
+                        error="This annotation has already been reviewed and can no longer be edited.",
+                        user_records=user_records,
+                        review_counts=review_counts
+                    )
 
                 # # 🔐 Security check
                 # if (
@@ -281,12 +449,14 @@ def load_annotation():
         return render_template(
             "load_annotation.html",
             error="Annotation ID not found",
-            user_records=user_records
+            user_records=user_records,
+            review_counts=review_counts
         )
 
     return render_template(
         "load_annotation.html",
-        user_records=user_records
+        user_records=user_records,
+        review_counts=review_counts
     )
 
 if __name__ == "__main__":

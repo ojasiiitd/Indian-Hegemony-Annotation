@@ -54,11 +54,13 @@
                 <th width="18%">ID</th>
                 <th width="15%">State</th>
                 <th>Base Prompt</th>
-                <th width="10%"></th>
+                <th width="12%"></th>
+                <th width="12%">Reviewed By</th>
               </tr>
             </thead>
             <tbody>
               {% for r in user_records|reverse %}
+              {% set reviewed_by = review_counts.get(r.id, 0) %}
               <tr>
                 <td style="font-family: monospace; font-size: 0.85rem;">
                   {{ r.id }}
@@ -79,10 +81,15 @@
                     <input type="hidden"
                            name="annotation_id"
                            value="{{ r.id }}">
-                    <button class="button is-small is-link is-light">
+                    <button class="button is-small is-link is-light"
+                            {% if reviewed_by >= 1 %}disabled{% endif %}>
                       Edit
                     </button>
                   </form>
+                </td>
+
+                <td>
+                  <span class="has-text-success has-text-weight-semibold">{{ reviewed_by }}</span>
                 </td>
               </tr>
               {% endfor %}

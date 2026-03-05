@@ -12,5 +12,19 @@
     "llm_experience_level": "Researcher",
     "urban_rural_background": "Urban",
     "created_at": "2026-03-03T10:35:43.147187"
+  },
+  {
+    "username": "testanno",
+    "password": "scrypt:32768:8:1$cAeSf1NlUt1iVqsQ$c95bdecf64e7a03e09232847cc4d4bca065bcc14941f4fafae8db721372128f3d9a9ba0abfcc959bdafaba72f78ad92d30ecb3a7e24ad4ad4d3ec28c0f8420ce",
+    "state": "Uttar Pradesh",
+    "region": "North",
+    "age_group": "18\u201324",
+    "gender": "Male",
+    "education_level": "Undergraduate",
+    "field_of_study": "www",
+    "social_theory_training": "Yes",
+    "llm_experience_level": "Beginner",
+    "urban_rural_background": "Urban",
+    "created_at": "2026-03-05T10:38:45.425189"
   }
 ]
