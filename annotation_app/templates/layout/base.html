@@ -254,6 +254,9 @@
         transition: color 0.2s ease;
         color: #edf2ff !important;
     }
+    .navbar-link.nav-link:not(.is-arrowless)::after {
+        border-color: #edf2ff;
+    }
 
     /* Hover underline animation */
     .nav-links .nav-link::after {
@@ -297,6 +300,27 @@
 
     .nav-admin::after {
         background-color: #dc2626;
+    }
+
+    .navbar-dropdown {
+        border-radius: 10px;
+        border: 1px solid #dbe3ff;
+        box-shadow: 0 12px 24px rgba(47, 66, 124, 0.18);
+    }
+
+    .navbar-dropdown .navbar-item {
+        color: #3b4264 !important;
+        font-weight: 600;
+    }
+
+    .navbar-dropdown .navbar-item:hover {
+        background-color: #eef3ff;
+        color: #2f3a63 !important;
+    }
+
+    .navbar-dropdown .navbar-item.is-active {
+        background-color: #e3ebff;
+        color: #2b3975 !important;
     }
 
     @media (max-width: 1023px) {
@@ -353,34 +377,6 @@
         Load
         </a>
 
-        <!-- Examples -->
-        <a class="navbar-item nav-link
-            {% if request.endpoint == 'examples' %}
-                nav-active-secondary
-            {% endif %}"
-            href="{{ url_for('examples') }}"
-            target="_blank">
-            Examples
-        </a>
-
-        <!-- References -->
-        <a class="navbar-item nav-link
-            {% if request.endpoint == 'references' %}
-                nav-active-secondary
-            {% endif %}"
-            href="{{ url_for('references') }}"
-            target="_blank">
-            References
-        </a>
-
-        <!-- Guidelines -->
-        <a class="navbar-item nav-link"
-            href="https://docs.google.com/document/d/1dSHQtgGm9d18kL-dMsWP5qyfh76F62QVPeT_bXB5uMo/edit?tab=t.0#heading=h.sl3jtamap7ca"
-            target="_blank"
-            rel="noopener noreferrer">
-            Guidelines
-        </a>
-
         <!-- Admin -->
         {% if session.get("user") and session["user"]["role"] == "admin" %}
         <a class="navbar-item nav-link nav-admin
@@ -396,10 +392,36 @@
         </div>
 
         <div class="navbar-end">
+        <div class="navbar-item has-dropdown is-hoverable">
+          <a class="navbar-link nav-link
+              {% if request.endpoint in ['examples', 'references'] %}
+                nav-active-secondary
+              {% endif %}">
+              Annotator Resources
+          </a>
+          <div class="navbar-dropdown is-boxed is-right">
+            <a class="navbar-item"
+              href="https://docs.google.com/document/d/1dSHQtgGm9d18kL-dMsWP5qyfh76F62QVPeT_bXB5uMo/edit?tab=t.0#heading=h.sl3jtamap7ca"
+              target="_blank"
+              rel="noopener noreferrer">
+              Guidelines
+            </a>
+            <a class="navbar-item {% if request.endpoint == 'examples' %}is-active{% endif %}"
+              href="{{ url_for('examples') }}"
+              target="_blank">
+              Examples
+            </a>
+            <a class="navbar-item {% if request.endpoint == 'references' %}is-active{% endif %}"
+              href="{{ url_for('references') }}"
+              target="_blank">
+              References
+            </a>
+          </div>
+        </div>
         {% if session.get("user") %}
             <div class="navbar-item">
             <span class="mr-2 is-size-6 has-text-warning">
-                {{ session["user"]["username"] }}
+                Hello, {{ session["user"]["username"] }}
             </span>
             <a class="button is-light is-small"
                 href="{{ url_for('auth.logout') }}">
