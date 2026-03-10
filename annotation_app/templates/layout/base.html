@@ -264,6 +264,12 @@
         border-color: #edf2ff;
     }
 
+    .disabled {
+        pointer-events: none;
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
     /* Hover underline animation */
     .nav-links .nav-link::after {
         content: "";
@@ -371,12 +377,20 @@
             Annotate
         </a>
 
-        <!-- Review -->
+        <!-- Review
         <a class="navbar-item nav-link
             {% if request.endpoint in ['prompt_review', 'review_annotation'] %}
                 nav-active
             {% endif %}"
             href="{{ url_for('prompt_review') }}">
+            Review
+        </a> -->
+
+        <a class="navbar-item nav-link disabled
+            {% if request.endpoint in ['prompt_review', 'review_annotation'] %}
+                nav-active
+            {% endif %}"
+            href="#">
             Review
         </a>
 

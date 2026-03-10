@@ -18,6 +18,15 @@ app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
 app.register_blueprint(auth_bp)
 
+# If set, /examples will show only these annotation IDs (in this exact order).
+# Leave empty to use automatic latest-complete sampling.
+EXAMPLE_ANNOTATION_IDS = [
+    "51147a23-93a1-4f92-9629-6e7e91ed497e",
+    "c938d8c6-e82c-481e-afd5-0beac5ef935b",
+    "adc1750a-538e-4c0a-907d-dc67c5baba08",
+    "19592883-74f0-4f9d-bed5-a8dccc778510"
+]
+
 @app.before_request
 def validate_session():
     try:
@@ -262,7 +271,58 @@ def freshannotate():
 
 @app.route("/examples")
 def examples():
-    return render_template("examples.html")
+    def _has_text(value):
+        return bool(str(value).strip()) if value is not None else False
+
+    def _is_complete(record):
+        prompts = record.get("prompts", {})
+        if not _has_text(prompts.get("base")) or not _has_text(prompts.get("identity")):
+            return False
+
+        outputs = record.get("outputs", {})
+        for model in ["gemini", "gpt", "llama", "deepseek"]:
+            for kind in ["base", "identity"]:
+                text = outputs.get(model, {}).get(kind, {}).get("text")
+                if not _has_text(text):
+                    return False
+
+        return _has_text(record.get("ground_truth"))
+
+    try:
+        records = load_records_from_sheet()
+    except Exception as e:
+        return render_template(
+            "examples.html",
+            samples=[],
+            error=f"Could not load examples from Google Sheets: {e}"
+        )
+
+    if EXAMPLE_ANNOTATION_IDS:
+        records_by_id = {r.get("id"): r for r in records if r.get("id")}
+        selected_records = [
+            records_by_id[_id]
+            for _id in EXAMPLE_ANNOTATION_IDS
+            if _id in records_by_id
+        ]
+    else:
+        complete_records = [r for r in records if _is_complete(r)]
+        source_records = complete_records if complete_records else records
+        selected_records = source_records[-5:]
+        selected_records.reverse()
+
+    samples = []
+    for idx, r in enumerate(selected_records, start=1):
+        samples.append({
+            "label": f"Sample {idx} ({r.get('region', 'Unknown')} / {r.get('state', 'Unknown')})",
+            "region": r.get("region", ""),
+            "state": r.get("state", ""),
+            "prompts": r.get("prompts", {}),
+            "outputs": r.get("outputs", {}),
+            "ground_truth": r.get("ground_truth", ""),
+            "references": r.get("references", ""),
+        })
+
+    return render_template("examples.html", samples=samples)
 
 @app.route("/confirm", methods=["POST"])
 @login_required
@@ -436,6 +496,7 @@ def load_annotation():
 
     if request.method == "POST":
         annotation_id = request.form.get("annotation_id", "").strip()
+        load_mode = request.form.get("load_mode", "edit")
 
         if not annotation_id:
             return render_template(
@@ -447,6 +508,13 @@ def load_annotation():
 
         for record in records:
             if record["id"] == annotation_id:
+                if load_mode == "view":
+                    return render_template(
+                        "review.html",
+                        record=record,
+                        view_only=True
+                    )
+
                 if review_counts.get(annotation_id, 0) >= 1:
                     return render_template(
                         "load_annotation.html",

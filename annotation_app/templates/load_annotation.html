@@ -22,6 +22,7 @@
         {% endif %}
 
         <form method="POST">
+          <input type="hidden" name="load_mode" value="view">
           <div class="field">
             <label class="label">Load by Annotation ID</label>
             <input class="input"
@@ -33,7 +34,7 @@
 
           <div class="field mt-3">
             <button class="button is-dark">
-              Load & Edit →
+              Load →
             </button>
           </div>
         </form>
@@ -81,6 +82,7 @@
                     <input type="hidden"
                            name="annotation_id"
                            value="{{ r.id }}">
+                    <input type="hidden" name="load_mode" value="edit">
                     <button class="button is-small is-link is-light"
                             {% if reviewed_by >= 1 %}disabled{% endif %}>
                       Edit

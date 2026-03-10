@@ -9,7 +9,11 @@
       <div class="card-content">
         <h1 class="title">Review Annotation</h1>
         <p class="subtitle mb-0">
-          Verify all entries before final submission.
+          {% if view_only %}
+            Loaded annotation (read-only view).
+          {% else %}
+            Verify all entries before final submission.
+          {% endif %}
         </p>
       </div>
     </div>
@@ -139,19 +143,27 @@
       <div class="card-content">
         <div class="columns is-vcentered">
           <div class="column">
-            <a href="{{ url_for('annotate') }}" class="button is-dark is-medium">
-              ← Edit
-            </a>
+            {% if view_only %}
+              <a href="{{ url_for('load_annotation') }}" class="button is-dark is-medium">
+                ← Back
+              </a>
+            {% else %}
+              <a href="{{ url_for('annotate') }}" class="button is-dark is-medium">
+                ← Edit
+              </a>
+            {% endif %}
           </div>
 
-          <div class="column has-text-right">
-            <form method="POST" action="{{ url_for('confirm') }}">
-              <input type="hidden" name="record" value='{{ record | tojson }}'>
-              <button class="button is-success is-medium" type="submit">
-                Confirm & Submit →
-              </button>
-            </form>
-          </div>
+          {% if not view_only %}
+            <div class="column has-text-right">
+              <form method="POST" action="{{ url_for('confirm') }}">
+                <input type="hidden" name="record" value='{{ record | tojson }}'>
+                <button class="button is-success is-medium" type="submit">
+                  Confirm & Submit →
+                </button>
+              </form>
+            </div>
+          {% endif %}
         </div>
       </div>
     </div>
