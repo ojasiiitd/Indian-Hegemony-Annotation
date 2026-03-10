@@ -25,11 +25,11 @@
     </div>
   </div>
 
-  <label class="label mt-2">{{ axis|capitalize }} Impact</label>
+  <label class="label mt-2">{{ axis|capitalize }} Reason</label>
   <textarea class="textarea"
             name="{{ model }}_{{ kind }}_{{ axis }}_impact"
             rows="2"
-            placeholder="Fill only if 'Yes'">{{ draft.outputs[model][kind].hegemony[axis].impact if draft }}</textarea>
+            placeholder="Fill reason only if 'Yes'">{{ draft.outputs[model][kind].hegemony[axis].impact if draft }}</textarea>
 
 </div>
 {% endfor %}
