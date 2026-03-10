@@ -26,41 +26,44 @@
       <div class="card-content">
         <h2 class="title is-5">Reviewable Annotations</h2>
 
-        {% if not records %}
+        {% if not clustered_records %}
           <p>No pending annotations for review right now.</p>
         {% else %}
-          <table class="table is-fullwidth is-striped is-hoverable">
-            <thead>
-              <tr>
-                <th width="16%">State</th>
-                <th>Base Prompt</th>
-                <th width="10%"></th>
-                <th width="12%">Reviewed By</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in records|reverse %}
-              {% set reviewed_by = review_counts.get(r.id, 0) %}
-              <tr>
-                <td>{{ r.state }}</td>
-                <td>
-                  <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
-                    {{ r.prompts.base }}
-                  </div>
-                </td>
-                <td>
-                  <a class="button is-small is-link is-light"
-                     href="{{ url_for('review_annotation', annotation_id=r.id) }}">
-                    Review
-                  </a>
-                </td>
-                <td>
-                  <span class="has-text-success has-text-weight-semibold">{{ reviewed_by }}</span>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+          {% for cluster in clustered_records %}
+            <h3 class="title is-6 mt-4 mb-2">
+              Region: {{ cluster.region }} | State: {{ cluster.state }}
+            </h3>
+            <table class="table is-fullwidth is-striped is-hoverable mb-5">
+              <thead>
+                <tr>
+                  <th>Base Prompt</th>
+                  <th width="10%"></th>
+                  <th width="12%">Reviewed By</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for r in cluster.records %}
+                {% set reviewed_by = review_counts.get(r.id, 0) %}
+                <tr>
+                  <td>
+                    <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                      {{ r.prompts.base }}
+                    </div>
+                  </td>
+                  <td>
+                    <a class="button is-small is-link is-light"
+                       href="{{ url_for('review_annotation', annotation_id=r.id) }}">
+                      Review
+                    </a>
+                  </td>
+                  <td>
+                    <span class="has-text-danger has-text-weight-semibold">{{ reviewed_by }}</span>
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          {% endfor %}
         {% endif %}
 
       </div>

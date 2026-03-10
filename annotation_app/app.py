@@ -74,6 +74,7 @@ def prompt_review():
             "review_list.html",
             records=[],
             review_counts={},
+            clustered_records=[],
             info="IAA review is available only for annotators."
         )
 
@@ -86,6 +87,7 @@ def prompt_review():
             "review_list.html",
             records=[],
             review_counts={},
+            clustered_records=[],
             error=f"Could not load review queue from Google Sheets: {e}"
         )
 
@@ -97,10 +99,34 @@ def prompt_review():
         and r.get("id") not in reviewed_ids
     ]
 
+    reviewable_sorted = sorted(
+        reviewable,
+        key=lambda r: (
+            r.get("region", ""),
+            r.get("state", ""),
+            r.get("id", "")
+        )
+    )
+
+    clustered_map = {}
+    for r in reviewable_sorted:
+        key = (r.get("region", "Unknown"), r.get("state", "Unknown"))
+        clustered_map.setdefault(key, []).append(r)
+
+    clustered_records = [
+        {
+            "region": key[0],
+            "state": key[1],
+            "records": grouped_records
+        }
+        for key, grouped_records in clustered_map.items()
+    ]
+
     return render_template(
         "review_list.html",
         records=reviewable,
-        review_counts=review_counts
+        review_counts=review_counts,
+        clustered_records=clustered_records
     )
 
 
