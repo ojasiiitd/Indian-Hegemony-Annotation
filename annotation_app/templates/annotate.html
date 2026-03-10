@@ -16,6 +16,7 @@
     <div class="card">
       <div class="card-content">
         <form method="POST">
+          <input type="hidden" id="current_annotation_id" value="{{ current_annotation_id or '' }}">
 
           <!-- REGION / STATE -->
           <div class="card mb-5">
@@ -31,9 +32,24 @@
                 <div class="column">
                   <label class="label">Base Prompt</label>
                   <textarea class="textarea"
+                            id="base_prompt_input"
                             name="base_prompt"
                             rows="3"
                             required>{{ draft.prompts.base if draft }}</textarea>
+
+                  <div class="field mt-3">
+                    <button type="button"
+                            id="check_similarity_btn"
+                            class="button is-danger has-text-weight-semibold"
+                            onclick="checkPromptSimilarity()">
+                      Check Similarity
+                    </button>
+                    <p class="help has-text-danger mt-1">
+                      Please run this before proceeding.
+                    </p>
+                  </div>
+
+                  <div id="similarity_results" class="notification is-light is-hidden mt-3"></div>
                 </div>
 
                 <div class="column">

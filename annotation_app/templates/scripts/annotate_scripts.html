@@ -102,6 +102,86 @@ async function generateOutput(model, kind) {
 
 
 <script>
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function checkPromptSimilarity() {
+  const promptBox = document.getElementById("base_prompt_input");
+  const stateHidden = document.querySelector("input[name='state']");
+  const currentAnnotationInput = document.getElementById("current_annotation_id");
+  const btn = document.getElementById("check_similarity_btn");
+  const resultBox = document.getElementById("similarity_results");
+
+  const prompt = promptBox ? promptBox.value.trim() : "";
+  const state = stateHidden ? stateHidden.value.trim() : "";
+  const currentAnnotationId = currentAnnotationInput ? currentAnnotationInput.value.trim() : "";
+
+  if (!prompt) {
+    alert("Base prompt is empty.");
+    return;
+  }
+
+  resultBox.classList.remove("is-hidden", "is-danger", "is-warning", "is-success", "is-info");
+  resultBox.classList.add("is-light");
+  resultBox.innerHTML = "Checking similarity...";
+
+  btn.disabled = true;
+  const originalBtnText = btn.textContent;
+  btn.textContent = "Checking...";
+
+  try {
+    const response = await fetch("/check-prompt-similarity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt,
+        state,
+        current_annotation_id: currentAnnotationId
+      })
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "Similarity check failed.");
+    }
+
+    if (!payload.matches || payload.matches.length === 0) {
+      resultBox.classList.add("is-success");
+      resultBox.innerHTML = `<strong>${escapeHtml(payload.message || "No similar prompts above threshold. Please go ahead with your annotation.")}</strong>`;
+      return;
+    }
+
+    resultBox.classList.add("is-warning");
+
+    const lines = payload.matches.map((match) => {
+      const rawScore = Number(match.similarity);
+      const percent = Number.isFinite(rawScore) ? Math.round(rawScore * 100) : 0;
+      return `<li><strong>${percent}% match</strong>: ${escapeHtml(match.prompt)}</li>`;
+    }).join("");
+
+    resultBox.innerHTML = `
+      <p><strong>Similar prompts found. Another annotator from the same state has used a similar prompt. Please use a different prompt.</strong></p>
+      <ul>${lines}</ul>
+    `;
+  } catch (err) {
+    console.error(err);
+    resultBox.classList.add("is-danger");
+    resultBox.innerHTML = `Error: ${escapeHtml(err.message || "Similarity check failed.")}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalBtnText;
+  }
+}
+</script>
+
+
+<script>
 let currentStep = 1;
 
 function showStep(step) {

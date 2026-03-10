@@ -13,6 +13,15 @@ from auth import auth_bp
 from draft_store import *
 from datetime import datetime
 import uuid
+from prompt_similarity import (
+    PROMPT_SIM_THRESHOLD,
+    PROMPT_SIM_TOP_K,
+    PROMPT_SIM_MIN_CHARS,
+    PROMPT_SIM_NEAR_DUP_THRESHOLD,
+    find_similar_for_state,
+    upsert_prompt_embedding_for_record,
+    remove_prompt_embedding,
+)
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
@@ -51,6 +60,13 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapper
 
+
+def _safe_upsert_prompt_embedding(record):
+    try:
+        upsert_prompt_embedding_for_record(record)
+    except Exception as e:
+        print(f"⚠️ Prompt embedding upsert failed for {record.get('id')}: {e}")
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def annotate():
@@ -70,8 +86,51 @@ def annotate():
         "annotate.html",
         region_state_map=REGION_STATE_MAP,
         draft=draft,
-        user=session.get("user")
+        user=session.get("user"),
+        current_annotation_id=session.get("editing_id", "")
     )
+
+
+@app.route("/check-prompt-similarity", methods=["POST"])
+@login_required
+def check_prompt_similarity():
+    data = request.json or {}
+    prompt = (data.get("prompt") or "").strip()
+    state = (data.get("state") or "").strip()
+    current_annotation_id = (data.get("current_annotation_id") or "").strip() or None
+
+    if not prompt:
+        return jsonify({"error": "Prompt is required"}), 400
+    if not state:
+        return jsonify({"error": "State is required"}), 400
+
+    if len(prompt) < PROMPT_SIM_MIN_CHARS:
+        return jsonify({
+            "threshold": PROMPT_SIM_THRESHOLD,
+            "count": 0,
+            "matches": [],
+            "message": f"Enter at least {PROMPT_SIM_MIN_CHARS} characters to check similarity."
+        })
+
+    try:
+        matches = find_similar_for_state(
+            prompt=prompt,
+            state=state,
+            threshold=PROMPT_SIM_THRESHOLD,
+            top_k=PROMPT_SIM_TOP_K,
+            exclude_annotation_id=current_annotation_id,
+        )
+    except Exception as e:
+        return jsonify({"error": f"Similarity check failed: {e}"}), 500
+        
+    near_duplicate = any(m["similarity"] >= PROMPT_SIM_NEAR_DUP_THRESHOLD for m in matches)
+    return jsonify({
+        "threshold": PROMPT_SIM_THRESHOLD,
+        "count": len(matches),
+        "matches": matches,
+        "near_duplicate": near_duplicate,
+        "message": "Similar prompts found." if matches else "No similar prompts above threshold."
+    })
 
 @app.route("/promptreview")
 @login_required
@@ -349,6 +408,7 @@ def confirm():
             print("stale editing_id; falling back to new row")
             write_jsonl(record)
             append_row(json_to_row(record))
+            _safe_upsert_prompt_embedding(record)
             return redirect("/")
 
         record["id"] = editing_id
@@ -364,11 +424,13 @@ def confirm():
 
         # 🔥 Update single row in Sheets
         update_row_by_id(editing_id, json_to_row(record))
+        _safe_upsert_prompt_embedding(record)
 
     else:
         print("in newroww")
         write_jsonl(record)
         append_row(json_to_row(record))
+        _safe_upsert_prompt_embedding(record)
 
     return redirect("/")
 
@@ -400,6 +462,8 @@ def admin_delete():
 
     # Filter out deleted records
     remaining = [r for r in records if r["id"] not in delete_ids]
+    for deleted_id in delete_ids:
+        remove_prompt_embedding(deleted_id)
 
     # Rewrite JSONL
     rewrite_jsonl(remaining)

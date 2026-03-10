@@ -3,3 +3,4 @@ gspread==6.2.1
 protobuf==6.33.4
 Werkzeug==3.1.5
 openai==1.82.0
+requests==2.32.3
