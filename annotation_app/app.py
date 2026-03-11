@@ -22,6 +22,7 @@ from prompt_similarity import (
     upsert_prompt_embedding_for_record,
     remove_prompt_embedding,
 )
+from notes_store import list_notes, save_note, delete_note
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
@@ -88,6 +89,60 @@ def annotate():
         draft=draft,
         user=session.get("user"),
         current_annotation_id=session.get("editing_id", "")
+    )
+
+
+@app.route("/notes", methods=["GET", "POST"])
+@login_required
+def notes():
+    user = session.get("user", {})
+    username = (user.get("username") or "").strip()
+    default_state = (user.get("state") or "").strip()
+
+    info = None
+    error = None
+    draft_prompt = ""
+
+    if request.method == "POST":
+        action = (request.form.get("action") or "save").strip()
+
+        if action == "save":
+            draft_prompt = (request.form.get("prompt") or "").strip()
+            note_state = (request.form.get("state") or default_state).strip()
+
+            if not draft_prompt:
+                error = "Please enter a prompt before saving."
+            else:
+                try:
+                    save_note(username=username, prompt=draft_prompt, state=note_state)
+                    info = "Prompt saved to your notes."
+                    draft_prompt = ""
+                except Exception as e:
+                    error = f"Could not save note: {e}"
+
+        elif action == "delete":
+            note_id = (request.form.get("note_id") or "").strip()
+            try:
+                deleted = delete_note(username=username, note_id=note_id)
+                info = "Note deleted." if deleted else "Note not found."
+            except Exception as e:
+                error = f"Could not delete note: {e}"
+
+    try:
+        saved_notes = list_notes(username=username)
+    except Exception as e:
+        saved_notes = []
+        if not error:
+            error = f"Could not load notes: {e}"
+
+    return render_template(
+        "notes.html",
+        user=user,
+        default_state=default_state,
+        notes=saved_notes,
+        info=info,
+        error=error,
+        draft_prompt=draft_prompt,
     )
 
 

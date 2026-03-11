@@ -1,0 +1,183 @@
+{% extends "layout/base.html" %}
+
+{% block title %}Notes{% endblock %}
+
+{% block content %}
+<section class="section pt-1">
+  <div class="container">
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <h1 class="title">Prompt Notes</h1>
+        <p class="subtitle mb-0">
+          Draft, verify and save prompts for later.
+        </p>
+      </div>
+    </div>
+
+    {% if error %}
+      <div class="notification is-danger is-light mb-5">{{ error }}</div>
+    {% endif %}
+
+    {% if info %}
+      <div class="notification is-info is-light mb-5">{{ info }}</div>
+    {% endif %}
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <form method="POST">
+          <input type="hidden" name="action" value="save">
+          <input type="hidden" name="state" id="notes_state" value="{{ default_state }}">
+
+          <div class="field mb-4">
+            <label class="label">State</label>
+            <input class="input" type="text" value="{{ default_state }}" readonly>
+          </div>
+
+          <div class="field">
+            <label class="label">Prompt</label>
+            <textarea class="textarea"
+                      id="notes_prompt_input"
+                      name="prompt"
+                      rows="5"
+                      placeholder="Type your draft prompt here..."
+                      required>{{ draft_prompt }}</textarea>
+          </div>
+
+          <div class="field is-grouped mt-4">
+            <p class="control">
+              <button type="button"
+                      id="notes_check_similarity_btn"
+                      class="button is-warning has-text-weight-semibold"
+                      onclick="checkNotesPromptSimilarity()">
+                Check Similarity
+              </button>
+            </p>
+            <p class="control">
+              <button type="submit" class="button is-info has-text-weight-semibold">
+                Save to Notes
+              </button>
+            </p>
+          </div>
+
+          <div id="notes_similarity_results" class="notification is-light is-hidden mt-3"></div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-content">
+        <h2 class="title is-5">Saved Prompts</h2>
+
+        {% if not notes %}
+          <p>No saved prompts yet.</p>
+        {% else %}
+          <table class="table is-fullwidth is-striped is-hoverable">
+            <thead>
+              <tr>
+                <th width="22%">Saved Date</th>
+                <th>Prompt</th>
+                <th width="10%"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for note in notes %}
+              <tr>
+                <td style="font-size: 0.85rem;">{{ note.created_date }}</td>
+                <td>
+                  <pre class="wrapped-pre">{{ note.prompt }}</pre>
+                </td>
+                <td>
+                  <form method="POST">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="note_id" value="{{ note.id }}">
+                    <button class="button is-small is-danger is-light" type="submit">
+                      Delete
+                    </button>
+                  </form>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+async function checkNotesPromptSimilarity() {
+  const promptBox = document.getElementById("notes_prompt_input");
+  const stateInput = document.getElementById("notes_state");
+  const btn = document.getElementById("notes_check_similarity_btn");
+  const resultBox = document.getElementById("notes_similarity_results");
+
+  const prompt = promptBox ? promptBox.value.trim() : "";
+  const state = stateInput ? stateInput.value.trim() : "";
+
+  if (!prompt) {
+    alert("Prompt is empty.");
+    return;
+  }
+
+  resultBox.classList.remove("is-hidden", "is-danger", "is-warning", "is-success", "is-info");
+  resultBox.classList.add("is-light");
+  resultBox.innerHTML = "Checking similarity...";
+
+  btn.disabled = true;
+  const originalBtnText = btn.textContent;
+  btn.textContent = "Checking...";
+
+  try {
+    const response = await fetch("/check-prompt-similarity", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt, state })
+    });
+
+    const payload = await response.json();
+    if (!response.ok) {
+      throw new Error(payload.error || "Similarity check failed.");
+    }
+
+    if (!payload.matches || payload.matches.length === 0) {
+      resultBox.classList.add("is-success");
+      resultBox.innerHTML = `<strong>${escapeHtml(payload.message || "No similar prompts above threshold.")}</strong>`;
+      return;
+    }
+
+    resultBox.classList.add("is-warning");
+    const lines = payload.matches.map((match) => {
+      const rawScore = Number(match.similarity);
+      const percent = Number.isFinite(rawScore) ? Math.round(rawScore * 100) : 0;
+      return `<li><strong>${percent}% match</strong>: ${escapeHtml(match.prompt)}</li>`;
+    }).join("");
+
+    resultBox.innerHTML = `
+      <p><strong>Similar prompts found.</strong></p>
+      <ul>${lines}</ul>
+    `;
+  } catch (err) {
+    console.error(err);
+    resultBox.classList.add("is-danger");
+    resultBox.innerHTML = `Error: ${escapeHtml(err.message || "Similarity check failed.")}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalBtnText;
+  }
+}
+</script>
+{% endblock %}

@@ -393,9 +393,23 @@
         </a>
 
         <!-- Load -->
-        <a class="navbar-item nav-link"
+        <a class="navbar-item nav-link
+            {% if request.endpoint == 'load_annotation' %}
+                nav-active
+            {% endif %}"
         href="{{ url_for('load_annotation') }}">
         Load
+        </a>
+
+        <!-- Notes -->
+        <a class="navbar-item nav-link
+            {% if request.endpoint == 'notes' %}
+                nav-active
+            {% endif %}"
+        href="{{ url_for('notes') }}"
+        target="_blank"
+        rel="noopener noreferrer">
+        Notes
         </a>
 
         <!-- Admin -->
@@ -421,7 +435,7 @@
           </a>
           <div class="navbar-dropdown is-boxed is-right">
             <a class="navbar-item"
-              href="https://docs.google.com/document/d/1dSHQtgGm9d18kL-dMsWP5qyfh76F62QVPeT_bXB5uMo/edit?tab=t.0#heading=h.sl3jtamap7ca"
+              href="https://docs.google.com/document/d/1dSHQtgGm9d18kL-dMsWP5qyfh76F62QVPeT_bXB5uMo/edit?usp=sharing"
               target="_blank"
               rel="noopener noreferrer">
               Guidelines
