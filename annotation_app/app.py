@@ -9,10 +9,11 @@ from llm import *
 import secrets
 from werkzeug.security import check_password_hash, generate_password_hash
 from functools import wraps
-from auth import auth_bp
+from auth import auth_bp, load_annotators
 from draft_store import *
 from datetime import datetime
 import uuid
+from collections import Counter, defaultdict
 from prompt_similarity import (
     PROMPT_SIM_THRESHOLD,
     PROMPT_SIM_TOP_K,
@@ -500,8 +501,184 @@ def records():
 @app.route("/admin")
 @admin_required
 def admin():
-    records = load_records()
-    return render_template("admin.html", records=records)
+    user = session.get("user")
+    data_source = "Google Sheets"
+    error = None
+
+    try:
+        records = load_records_from_sheet()
+    except Exception as e:
+        records = load_records()
+        data_source = "Local JSONL (fallback)"
+        error = f"Could not load records from Google Sheets: {e}. Showing local data."
+
+    try:
+        annotators = load_annotators()
+    except Exception as e:
+        annotators = []
+        if not error:
+            error = f"Could not load registered annotators: {e}"
+
+    annotation_count_by_annotator = Counter(
+        (r.get("annotator_name") or "").strip() for r in records if (r.get("annotator_name") or "").strip()
+    )
+
+    annotator_stats = []
+    seen_usernames = set()
+    for a in annotators:
+        username = (a.get("username") or "").strip()
+        if not username:
+            continue
+        seen_usernames.add(username)
+        annotator_stats.append({
+            "username": username,
+            "state": (a.get("state") or "Unknown").strip() or "Unknown",
+            "region": (a.get("region") or "Unknown").strip() or "Unknown",
+            "annotation_count": annotation_count_by_annotator.get(username, 0),
+        })
+
+    # Include annotations from usernames not present in annotators.json
+    for username, count in annotation_count_by_annotator.items():
+        if username not in seen_usernames:
+            annotator_stats.append({
+                "username": username,
+                "state": "Unknown",
+                "region": "Unknown",
+                "annotation_count": count,
+            })
+
+    annotator_stats.sort(key=lambda x: (-x["annotation_count"], x["username"].lower()))
+
+    registered_by_state = Counter(
+        (a.get("state") or "Unknown").strip() or "Unknown" for a in annotators
+    )
+
+    state_annotation_count = Counter()
+    state_active_annotators = defaultdict(set)
+    for r in records:
+        state = (r.get("state") or "Unknown").strip() or "Unknown"
+        username = (r.get("annotator_name") or "").strip()
+        state_annotation_count[state] += 1
+        if username:
+            state_active_annotators[state].add(username)
+
+    all_states = set(registered_by_state.keys()) | set(state_annotation_count.keys())
+    state_stats = []
+    for state in sorted(all_states):
+        state_stats.append({
+            "state": state,
+            "registered_annotators": registered_by_state.get(state, 0),
+            "active_annotators": len(state_active_annotators.get(state, set())),
+            "annotation_count": state_annotation_count.get(state, 0),
+        })
+
+    state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    daily_annotation_count = Counter()
+    for r in records:
+        raw_ts = str(r.get("timestamp") or r.get("created_at") or "").strip()
+        if not raw_ts:
+            continue
+
+        day_key = None
+        try:
+            parsed_ts = raw_ts.replace("Z", "+00:00")
+            day_key = datetime.fromisoformat(parsed_ts).date().isoformat()
+        except ValueError:
+            # Fallback for non-ISO formats that still start with YYYY-MM-DD
+            if len(raw_ts) >= 10 and raw_ts[4] == "-" and raw_ts[7] == "-":
+                day_key = raw_ts[:10]
+
+        if day_key:
+            daily_annotation_count[day_key] += 1
+
+    daily_progress = [
+        {"date": day, "count": daily_annotation_count[day]}
+        for day in sorted(daily_annotation_count.keys())
+    ]
+
+    totals = {
+        "registered_annotators": len([a for a in annotators if (a.get("username") or "").strip()]),
+        "active_annotators": len([s for s in annotator_stats if s["annotation_count"] > 0]),
+        "total_annotations": len(records),
+        "states_covered": len(all_states),
+    }
+
+    query_date = (request.args.get("date") or "").strip()
+    query_state = (request.args.get("state") or "").strip()
+    query_annotator = (request.args.get("annotator") or "").strip()
+
+    def _record_day(record):
+        raw_ts = str(record.get("timestamp") or record.get("created_at") or "").strip()
+        if not raw_ts:
+            return ""
+        try:
+            return datetime.fromisoformat(raw_ts.replace("Z", "+00:00")).date().isoformat()
+        except ValueError:
+            if len(raw_ts) >= 10 and raw_ts[4] == "-" and raw_ts[7] == "-":
+                return raw_ts[:10]
+            return ""
+
+    filtered_records = []
+    for r in records:
+        if query_date and _record_day(r) != query_date:
+            continue
+        if query_state and (r.get("state") or "").strip() != query_state:
+            continue
+        if query_annotator:
+            annotator_name = (r.get("annotator_name") or "").strip().lower()
+            if query_annotator.lower() not in annotator_name:
+                continue
+        filtered_records.append(r)
+
+    filtered_records.sort(
+        key=lambda r: str(r.get("timestamp") or r.get("created_at") or ""),
+        reverse=True
+    )
+
+    available_states = sorted({
+        (r.get("state") or "").strip()
+        for r in records
+        if (r.get("state") or "").strip()
+    })
+
+    return render_template(
+        "admin.html",
+        user=user,
+        region_state_map=REGION_STATE_MAP,
+        records=records,
+        annotator_stats=annotator_stats,
+        state_stats=state_stats,
+        daily_progress=daily_progress,
+        filtered_records=filtered_records,
+        available_states=available_states,
+        query_date=query_date,
+        query_state=query_state,
+        query_annotator=query_annotator,
+        totals=totals,
+        data_source=data_source,
+        error=error,
+    )
+
+
+@app.route("/admin/load/<annotation_id>")
+@admin_required
+def admin_load_annotation(annotation_id):
+    try:
+        records = load_records_from_sheet()
+    except Exception:
+        records = load_records()
+
+    record = next((r for r in records if r.get("id") == annotation_id), None)
+    if not record:
+        abort(404)
+
+    return render_template(
+        "review.html",
+        record=record,
+        view_only=True,
+        back_url=url_for("admin")
+    )
 
 
 @app.route("/admin/delete", methods=["POST"])
@@ -671,6 +848,14 @@ def load_annotation():
         user_records=user_records,
         review_counts=review_counts
     )
+
+
+
+
+
+
+
+
 
 if __name__ == "__main__":
     app.run(debug=True)

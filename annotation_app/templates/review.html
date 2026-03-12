@@ -144,7 +144,7 @@
         <div class="columns is-vcentered">
           <div class="column">
             {% if view_only %}
-              <a href="{{ url_for('load_annotation') }}" class="button is-dark is-medium">
+              <a href="{{ back_url if back_url else url_for('load_annotation') }}" class="button is-dark is-medium">
                 ← Back
               </a>
             {% else %}

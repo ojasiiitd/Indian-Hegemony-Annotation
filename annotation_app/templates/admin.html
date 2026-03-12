@@ -9,51 +9,230 @@
       <div class="card-content">
         <h1 class="title">Admin – Manage Annotations</h1>
         <p class="subtitle mb-0">
-          Select records to delete. This will update both JSONL and Google Sheets.
+          Admin overview, annotator statistics, and record management.
         </p>
       </div>
     </div>
 
-    <div class="card">
-      <div class="card-content">
-        <form method="POST" action="{{ url_for('admin_delete') }}">
+    {% if error %}
+      <div class="notification is-warning is-light mb-5">{{ error }}</div>
+    {% endif %}
 
-          <table class="table is-fullwidth is-striped">
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Summary</h2>
+        <p class="mb-3"><strong>Data Source:</strong> {{ data_source }}</p>
+        <div class="columns is-multiline">
+          <div class="column is-3">
+            <div class="box has-text-centered">
+              <p class="heading">Registered Annotators</p>
+              <p class="title is-4">{{ totals.registered_annotators }}</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="box has-text-centered">
+              <p class="heading">Active Annotators</p>
+              <p class="title is-4">{{ totals.active_annotators }}</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="box has-text-centered">
+              <p class="heading">Total Annotations</p>
+              <p class="title is-4">{{ totals.total_annotations }}</p>
+            </div>
+          </div>
+          <div class="column is-3">
+            <div class="box has-text-centered">
+              <p class="heading">States Covered</p>
+              <p class="title is-4">{{ totals.states_covered }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Progress Visualizations</h2>
+        <div>
+          <p class="has-text-weight-semibold mb-2">Annotations by State</p>
+          <div style="max-width: 420px;">
+            <canvas id="stateAnnotationsChart" height="220"></canvas>
+          </div>
+        </div>
+        <hr>
+        <div>
+          <p class="has-text-weight-semibold mb-2">Daily Annotations Progress</p>
+          <canvas id="dailyProgressChart" height="120"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Query Annotations</h2>
+        <form method="GET" action="{{ url_for('admin') }}">
+          <div class="columns is-variable is-4">
+            <div class="column">
+              <label class="label">Date</label>
+              <input class="input" type="date" name="date" value="{{ query_date }}">
+            </div>
+            <div class="column">
+              <label class="label">State</label>
+              <div class="control select is-fullwidth">
+                <select name="state">
+                  <option value="">All States</option>
+                  {% for state in available_states %}
+                    <option value="{{ state }}" {% if query_state == state %}selected{% endif %}>
+                      {{ state }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+            </div>
+            <div class="column">
+              <label class="label">Annotator Name</label>
+              <input class="input"
+                     type="text"
+                     name="annotator"
+                     value="{{ query_annotator }}"
+                     placeholder="Enter full/partial name">
+            </div>
+          </div>
+
+          <div class="field is-grouped mt-2">
+            <p class="control">
+              <button class="button is-info" type="submit">Search</button>
+            </p>
+            <p class="control">
+              <a class="button is-light" href="{{ url_for('admin') }}">Reset</a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Query Results ({{ filtered_records|length }})</h2>
+        {% if not filtered_records %}
+          <p>No annotations match the selected filters.</p>
+        {% else %}
+          <table class="table is-fullwidth is-striped is-hoverable">
             <thead>
               <tr>
-                <th>Delete</th>
-                <th>ID</th>
-                <th>State</th>
-                <th>Prompt</th>
+                <th width="12%">Date</th>
+                <th width="16%">State</th>
+                <th width="16%">Annotator</th>
+                <th width="24%">ID</th>
+                <th>Base Prompt</th>
+                <th width="10%"></th>
               </tr>
             </thead>
             <tbody>
-              {% for r in records %}
+              {% for r in filtered_records %}
               <tr>
-                <td>
-                  <input type="checkbox" name="delete_ids" value="{{ r.id }}">
-                </td>
-                <td>{{ r.id }}</td>
+                <td>{{ (r.timestamp or r.created_at or "")[:10] }}</td>
                 <td>{{ r.state }}</td>
-                <td>{{ r.prompts.base }}</td>
+                <td>{{ r.annotator_name }}</td>
+                <td style="font-family: monospace; font-size: 0.85rem;">{{ r.id }}</td>
+                <td>
+                  <div style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">
+                    {{ r.prompts.base }}
+                  </div>
+                </td>
+                <td>
+                  <a class="button is-small is-link is-light"
+                     href="{{ url_for('admin_load_annotation', annotation_id=r.id) }}">
+                    Load
+                  </a>
+                </td>
               </tr>
               {% endfor %}
             </tbody>
           </table>
-
-          <div class="field has-text-right">
-            <button class="button is-danger is-medium"
-                    type="submit"
-                    onclick="return confirm('Delete selected records? This cannot be undone.');">
-              Delete Selected & Sync Sheet
-            </button>
-          </div>
-
-        </form>
+        {% endif %}
       </div>
     </div>
 
   </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const stateStats = {{ state_stats | tojson }};
+  const dailyProgress = {{ daily_progress | tojson }};
+
+  const stateLabels = stateStats.map((row) => row.state);
+  const stateCounts = stateStats.map((row) => row.annotation_count);
+  const dailyLabels = dailyProgress.map((row) => row.date);
+  const dailyCounts = dailyProgress.map((row) => row.count);
+
+  const stateColors = [
+    "#4F46E5", "#0EA5E9", "#22C55E", "#F59E0B", "#EF4444",
+    "#14B8A6", "#A855F7", "#84CC16", "#EAB308", "#F97316"
+  ];
+
+  const stateCtx = document.getElementById("stateAnnotationsChart");
+  if (stateCtx && stateCounts.some((x) => x > 0)) {
+    new Chart(stateCtx, {
+      type: "pie",
+      data: {
+        labels: stateLabels,
+        datasets: [{
+          data: stateCounts,
+          backgroundColor: stateLabels.map((_, i) => stateColors[i % stateColors.length]),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom" }
+        }
+      }
+    });
+  } else if (stateCtx) {
+    stateCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No annotation data yet.</p>");
+  }
+
+  const dailyCtx = document.getElementById("dailyProgressChart");
+  if (dailyCtx && dailyCounts.some((x) => x > 0)) {
+    new Chart(dailyCtx, {
+      type: "line",
+      data: {
+        labels: dailyLabels,
+        datasets: [{
+          label: "Annotations",
+          data: dailyCounts,
+          borderColor: "#2563EB",
+          backgroundColor: "rgba(37, 99, 235, 0.12)",
+          fill: true,
+          tension: 0.25,
+          pointRadius: 3,
+          pointHoverRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: {
+              precision: 0
+            }
+          }
+        }
+      }
+    });
+  } else if (dailyCtx) {
+    dailyCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No daily timestamp data available.</p>");
+  }
+</script>
 {% endblock %}
