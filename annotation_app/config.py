@@ -5,7 +5,7 @@ DATA_FILE = "annotation_app/static/annotations.jsonl"
 
 REGION_STATE_MAP = {
     "East": ["West Bengal", "Arunachal Pradesh", "Assam", "Jharkhand", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Sikkim", "Tripura"],
-    "North": ["Uttar Pradesh", "Bihar", "Harayana", "Himachal Pradesh", "Punjab", "Rajasthan", "Uttarakhand", "Jammu and Kashmir", "Ladakh"],
+    "North": ["Uttar Pradesh", "Bihar", "Haryana", "Himachal Pradesh", "Punjab", "Rajasthan", "Uttarakhand", "Jammu and Kashmir", "Ladakh"],
 	"Central": ["Madhya Pradesh", "Chhattisgarh"],
     "South": ["Andhra Pradesh", "Telangana", "Karnataka", "Kerala", "Tamil Nadu"],
     "West": ["Maharashtra", "Gujarat", "Goa"]
