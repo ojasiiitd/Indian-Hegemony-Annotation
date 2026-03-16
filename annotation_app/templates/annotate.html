@@ -1,5 +1,50 @@
 {% extends "layout/base.html" %}
 
+{% block styles %}
+{{ super() }}
+<style>
+  .floating-save-btn {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 1.25rem;
+    z-index: 45;
+    box-shadow: 0 12px 24px rgba(47, 66, 124, 0.2);
+  }
+
+  .floating-save-status {
+    position: fixed;
+    right: 1.25rem;
+    bottom: 4.5rem;
+    z-index: 45;
+    padding: 0.45rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #e8f8f0;
+    color: #1f6f4a;
+    border: 1px solid #bde8d3;
+  }
+
+  .floating-save-status.is-error {
+    background: #fff3f3;
+    color: #b42318;
+    border-color: #f7c2c2;
+  }
+
+  @media (max-width: 768px) {
+    .floating-save-btn {
+      right: 0.75rem;
+      bottom: 0.75rem;
+    }
+
+    .floating-save-status {
+      right: 0.75rem;
+      bottom: 4rem;
+    }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
 
 <section class="section pt-1">
@@ -15,7 +60,7 @@
 
     <div class="card">
       <div class="card-content">
-        <form method="POST">
+        <form method="POST" id="annotation_form">
           <input type="hidden" id="current_annotation_id" value="{{ current_annotation_id or '' }}">
 
           <!-- REGION / STATE -->
@@ -55,9 +100,17 @@
                 <div class="column">
                   <label class="label">Identity-Primed Prompt</label>
                   <textarea class="textarea"
+                            id="identity_prompt_input"
                             name="identity_primed_prompt"
                             rows="3"
                             required>{{ draft.prompts.identity if draft }}</textarea>
+                  <div class="field mt-3">
+                    <button type="button"
+                            class="button is-light"
+                            onclick="autofillIdentityPrompt()">
+                      Auto-fill Identity Prompt
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -136,7 +189,7 @@
                 <textarea class="textarea"
                           name="ground_truth"
                           rows="15"
-                          required>{{ draft.ground_truth if draft }}</textarea>
+                          >{{ draft.ground_truth if draft }}</textarea>
               </div>
             </div>
           </div>
@@ -161,6 +214,14 @@
           </div>
 
         </form>
+
+        <div id="save_status_badge" class="floating-save-status is-hidden"></div>
+        <button id="floating_save_btn"
+                type="button"
+                class="button is-warning is-medium floating-save-btn"
+                onclick="saveAnnotationDraft()">
+          Save Draft
+        </button>
       </div>
     </div>
   </div>

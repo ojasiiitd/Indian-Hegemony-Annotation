@@ -397,7 +397,9 @@
             {% if request.endpoint == 'load_annotation' %}
                 nav-active
             {% endif %}"
-        href="{{ url_for('load_annotation') }}">
+        href="{{ url_for('load_annotation') }}"
+        target="_blank"
+        rel="noopener noreferrer">
         Load
         </a>
 

@@ -98,6 +98,23 @@ async function generateOutput(model, kind) {
     outputBox.value = "Request failed.";
   }
 }
+
+function autofillIdentityPrompt() {
+  const basePromptBox = document.getElementById("base_prompt_input");
+  const identityPromptBox = document.getElementById("identity_prompt_input");
+
+  const basePrompt = basePromptBox ? basePromptBox.value.trim() : "";
+  if (!basePrompt) {
+    alert("Please enter Base Prompt first.");
+    return;
+  }
+  if (!identityPromptBox) {
+    alert("Identity prompt field not found.");
+    return;
+  }
+
+  identityPromptBox.value = `As <place relavent identity here>, ${basePrompt}`;
+}
 </script>
 
 
@@ -173,6 +190,59 @@ async function checkPromptSimilarity() {
     console.error(err);
     resultBox.classList.add("is-danger");
     resultBox.innerHTML = `Error: ${escapeHtml(err.message || "Similarity check failed.")}`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalBtnText;
+  }
+}
+
+let saveStatusTimer = null;
+
+function showSaveStatus(message, isError = false) {
+  const badge = document.getElementById("save_status_badge");
+  if (!badge) return;
+
+  badge.classList.remove("is-hidden", "is-error");
+  if (isError) {
+    badge.classList.add("is-error");
+  }
+  badge.textContent = message;
+
+  if (saveStatusTimer) {
+    clearTimeout(saveStatusTimer);
+  }
+  saveStatusTimer = setTimeout(() => {
+    badge.classList.add("is-hidden");
+  }, 2800);
+}
+
+async function saveAnnotationDraft() {
+  const form = document.getElementById("annotation_form");
+  const btn = document.getElementById("floating_save_btn");
+  const currentAnnotationInput = document.getElementById("current_annotation_id");
+  if (!form || !btn) return;
+
+  const formData = new FormData(form);
+  const originalBtnText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+
+  try {
+    const response = await fetch("/save-annotation-draft", {
+      method: "POST",
+      body: formData
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) {
+      throw new Error(payload.error || "Could not save annotation.");
+    }
+    if (currentAnnotationInput && payload.annotation_id) {
+      currentAnnotationInput.value = payload.annotation_id;
+    }
+    showSaveStatus("Annotation saved");
+  } catch (err) {
+    console.error(err);
+    showSaveStatus(err.message || "Save failed", true);
   } finally {
     btn.disabled = false;
     btn.textContent = originalBtnText;

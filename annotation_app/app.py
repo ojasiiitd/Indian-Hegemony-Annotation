@@ -69,6 +69,41 @@ def _safe_upsert_prompt_embedding(record):
     except Exception as e:
         print(f"⚠️ Prompt embedding upsert failed for {record.get('id')}: {e}")
 
+
+def _persist_annotation_record(record, editing_id=None):
+    """
+    Persist annotation exactly like confirm flow.
+    Returns: (saved_annotation_id, mode) where mode is 'created' or 'updated'.
+    """
+    if editing_id:
+        records = load_records()
+        record_exists = any(r["id"] == editing_id for r in records)
+
+        # If stale editing_id leaked in session, fall back to creating a new row.
+        if not record_exists:
+            write_jsonl(record)
+            append_row(json_to_row(record))
+            _safe_upsert_prompt_embedding(record)
+            return record["id"], "created"
+
+        record["id"] = editing_id
+        updated_records = []
+        for r in records:
+            if r["id"] == editing_id:
+                updated_records.append(record)
+            else:
+                updated_records.append(r)
+
+        rewrite_jsonl(updated_records)
+        update_row_by_id(editing_id, json_to_row(record))
+        _safe_upsert_prompt_embedding(record)
+        return editing_id, "updated"
+
+    write_jsonl(record)
+    append_row(json_to_row(record))
+    _safe_upsert_prompt_embedding(record)
+    return record["id"], "created"
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def annotate():
@@ -91,6 +126,29 @@ def annotate():
         user=session.get("user"),
         current_annotation_id=session.get("editing_id", "")
     )
+
+
+@app.route("/save-annotation-draft", methods=["POST"])
+@login_required
+def save_annotation_draft():
+    try:
+        record = build_record(request.form)
+        editing_id = session.get("editing_id")
+        annotation_id, mode = _persist_annotation_record(record, editing_id=editing_id)
+        session["editing_id"] = annotation_id
+
+        return jsonify({
+            "ok": True,
+            "annotation_id": annotation_id,
+            "mode": mode,
+            "saved_at": datetime.utcnow().isoformat(),
+            "message": "Annotation saved."
+        })
+    except Exception as e:
+        return jsonify({
+            "ok": False,
+            "error": f"Could not save annotation: {e}"
+        }), 500
 
 
 @app.route("/notes", methods=["GET", "POST"])
@@ -451,42 +509,8 @@ def confirm():
 
     record = load_draft(draft_id)
     delete_draft(draft_id)
-
-    if editing_id:
-        print("in editinggg")
-
-        # Update JSONL
-        records = load_records()
-        record_exists = any(r["id"] == editing_id for r in records)
-
-        # If stale editing_id leaked in session, treat this submission as a new row.
-        if not record_exists:
-            print("stale editing_id; falling back to new row")
-            write_jsonl(record)
-            append_row(json_to_row(record))
-            _safe_upsert_prompt_embedding(record)
-            return redirect("/")
-
-        record["id"] = editing_id
-        updated_records = []
-
-        for r in records:
-            if r["id"] == editing_id:
-                updated_records.append(record)
-            else:
-                updated_records.append(r)
-
-        rewrite_jsonl(updated_records)
-
-        # 🔥 Update single row in Sheets
-        update_row_by_id(editing_id, json_to_row(record))
-        _safe_upsert_prompt_embedding(record)
-
-    else:
-        print("in newroww")
-        write_jsonl(record)
-        append_row(json_to_row(record))
-        _safe_upsert_prompt_embedding(record)
+    saved_id, mode = _persist_annotation_record(record, editing_id=editing_id)
+    print(f"confirm persisted annotation {saved_id} ({mode})")
 
     return redirect("/")
 
