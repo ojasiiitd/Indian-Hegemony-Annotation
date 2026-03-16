@@ -128,6 +128,19 @@ function escapeHtml(value) {
     .replaceAll("'", "&#039;");
 }
 
+function toggleStickyPrompts() {
+  const body = document.getElementById("sticky_prompt_body");
+  const icon = document.getElementById("sticky_prompt_toggle_icon");
+  const toggleBtn = icon ? icon.closest("button") : null;
+  if (!body || !icon) return;
+
+  const isCollapsed = body.classList.toggle("is-hidden");
+  icon.textContent = isCollapsed ? "▸" : "▾";
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  }
+}
+
 async function checkPromptSimilarity() {
   const promptBox = document.getElementById("base_prompt_input");
   const stateHidden = document.querySelector("input[name='state']");

@@ -222,7 +222,9 @@
     }
 
     .sticky-prompts {
-        position: static;
+        position: sticky;
+        top: 0;
+        z-index: 20;
     }
 
     /* NAV LINK BASE */
@@ -334,10 +336,6 @@
     }
 
     @media (max-width: 1023px) {
-        .sticky-prompts {
-            position: static;
-        }
-
         .navbar {
             border-radius: 0;
             margin: 0 0 1.2rem !important;

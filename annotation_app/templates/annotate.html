@@ -72,7 +72,17 @@
 
           <!-- PROMPTS (SHARED ACROSS MODELS) -->
           <div class="card mb-5 sticky-prompts">
-            <div class="card-content">
+            <header class="card-header" style="justify-content: flex-end;">
+              <button type="button"
+                      class="card-header-icon"
+                      aria-label="Toggle prompts panel"
+                      aria-expanded="true"
+                      onclick="toggleStickyPrompts()">
+                <span class="mr-1">Show/Hide Prompts</span>
+                <span id="sticky_prompt_toggle_icon" aria-hidden="true">▾</span>
+              </button>
+            </header>
+            <div class="card-content" id="sticky_prompt_body">
               <div class="columns is-variable is-6">
                 <div class="column">
                   <label class="label">Base Prompt</label>
