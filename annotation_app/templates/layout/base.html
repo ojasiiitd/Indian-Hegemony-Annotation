@@ -348,6 +348,37 @@
     }
 
     @media (max-width: 1023px) {
+        .navbar-brand {
+            align-items: center;
+        }
+
+        .navbar-burger {
+            color: #eef2ff;
+            margin-left: auto;
+            margin-right: 0.25rem;
+        }
+
+        .navbar-menu {
+            background: linear-gradient(180deg, #4b63b1, #4f67b7);
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 10px 20px rgba(47, 66, 124, 0.22);
+        }
+
+        .navbar-menu .navbar-item,
+        .navbar-menu .navbar-link {
+            color: #eef2ff !important;
+        }
+
+        .navbar-menu .navbar-dropdown {
+            background: #eef3ff;
+            border-radius: 10px;
+            margin: 0.25rem 0.75rem 0.75rem;
+        }
+
+        .navbar-menu .navbar-dropdown .navbar-item {
+            color: #2f3a63 !important;
+        }
+
         .navbar {
             border-radius: 0;
             margin: 0 0 1.2rem !important;
@@ -371,9 +402,18 @@
         <a class="navbar-item">
         Annotating Begumpura
         </a>
+        <a role="button"
+           class="navbar-burger"
+           aria-label="menu"
+           aria-expanded="false"
+           data-target="appNavbarMenu">
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+          <span aria-hidden="true"></span>
+        </a>
     </div>
 
-    <div class="navbar-menu">
+    <div id="appNavbarMenu" class="navbar-menu">
         <div class="navbar-start nav-links">
 
         <!-- Annotate -->
@@ -482,6 +522,36 @@
   <div class="container">
     {% block content %}{% endblock %}
   </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      const burgers = document.querySelectorAll(".navbar-burger");
+      burgers.forEach((burger) => {
+        burger.addEventListener("click", () => {
+          const targetId = burger.dataset.target;
+          const target = document.getElementById(targetId);
+          burger.classList.toggle("is-active");
+          if (target) {
+            target.classList.toggle("is-active");
+          }
+          burger.setAttribute("aria-expanded", burger.classList.contains("is-active") ? "true" : "false");
+        });
+      });
+
+      const isMobile = () => window.matchMedia("(max-width: 1023px)").matches;
+      const dropdownLinks = document.querySelectorAll(".navbar-item.has-dropdown > .navbar-link");
+      dropdownLinks.forEach((link) => {
+        link.addEventListener("click", (event) => {
+          if (!isMobile()) return;
+          event.preventDefault();
+          const parent = link.parentElement;
+          if (parent) {
+            parent.classList.toggle("is-active");
+          }
+        });
+      });
+    });
+  </script>
 
   {% block scripts %}{% endblock %}
 </body>

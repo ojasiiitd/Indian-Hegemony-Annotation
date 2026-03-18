@@ -18,7 +18,7 @@ def generate_gemini_output(prompt: str) -> str:
         model="gemini-3-flash-preview",
         contents=[prompt],
         config=types.GenerateContentConfig(
-            system_instruction="Answer in 150 words.",
+            system_instruction="Answer in no more than 150 words in English.",
             temperature=0.8
         )
     )
@@ -33,7 +33,7 @@ def generate_gpt_output(prompt: str) -> str:
         reasoning={
             "effort": "low"
         },
-        instructions= "Answer in 150 words.",
+        instructions= "Answer in no more than 150 words in English.",
         input=prompt
     )
 
@@ -54,7 +54,7 @@ def generate_deepseek_output(prompt: str) -> str:
             "messages": [
                 {
                     "role": "system",
-                    "content": "Answer in 150 words."
+                    "content": "Answer in no more than 150 words in English."
                 },
                 {
                     "role": "user",
@@ -84,7 +84,7 @@ def generate_llama_output(prompt: str) -> str:
         "messages": [
                 {
                     "role": "system",
-                    "content": "Answer in 150 words."
+                    "content": "Answer in no more than 150 words in English."
                 },
                 {
                     "role": "user",

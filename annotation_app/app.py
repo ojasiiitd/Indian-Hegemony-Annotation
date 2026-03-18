@@ -32,10 +32,15 @@ app.register_blueprint(auth_bp)
 # If set, /examples will show only these annotation IDs (in this exact order).
 # Leave empty to use automatic latest-complete sampling.
 EXAMPLE_ANNOTATION_IDS = [
+    "bf755666-b9c9-409d-a3a0-20f25f6d85aa",
+    "4d17f079-083a-40a6-bdee-010af3943430",
+    "73db6658-6eea-4a93-bd21-cc2c3c3c357d",
+    "5a83933e-74fb-422b-ab62-ec1c4e0bb8c0",
+
+
     "51147a23-93a1-4f92-9629-6e7e91ed497e",
     "c938d8c6-e82c-481e-afd5-0beac5ef935b",
-    "adc1750a-538e-4c0a-907d-dc67c5baba08",
-    "19592883-74f0-4f9d-bed5-a8dccc778510"
+    "adc1750a-538e-4c0a-907d-dc67c5baba08"
 ]
 
 @app.before_request
