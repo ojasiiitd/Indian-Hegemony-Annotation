@@ -27,10 +27,18 @@
       </div>
     </div>
 
-    <div class="card mb-5">
-      <div class="card-content">
-        <h2 class="title is-6">Prompts</h2>
-
+    <div class="card mb-5 sticky-prompts">
+      <header class="card-header" style="justify-content: flex-end;">
+        <button type="button"
+                class="card-header-icon"
+                aria-label="Toggle prompts panel"
+                aria-expanded="true"
+                onclick="toggleReviewPrompts()">
+          <span class="mr-1">Show/Hide Prompts</span>
+          <span id="review_prompt_toggle_icon" aria-hidden="true">▾</span>
+        </button>
+      </header>
+      <div class="card-content" id="review_prompt_body">
         <table class="table is-bordered is-fullwidth is-small">
           <tr>
             <th width="20%">Base Prompt</th>
@@ -171,4 +179,21 @@
   </div>
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleReviewPrompts() {
+  const body = document.getElementById("review_prompt_body");
+  const icon = document.getElementById("review_prompt_toggle_icon");
+  const toggleBtn = icon ? icon.closest("button") : null;
+  if (!body || !icon) return;
+
+  const isCollapsed = body.classList.toggle("is-hidden");
+  icon.textContent = isCollapsed ? "▸" : "▾";
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
+  }
+}
+</script>
 {% endblock %}
