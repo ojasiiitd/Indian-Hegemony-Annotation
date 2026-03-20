@@ -109,6 +109,28 @@ def _persist_annotation_record(record, editing_id=None):
     _safe_upsert_prompt_embedding(record)
     return record["id"], "created"
 
+
+def _has_text(value):
+    return bool(str(value).strip()) if value is not None else False
+
+
+def _is_annotation_completed(record):
+    prompts = record.get("prompts") or {}
+    if not _has_text(prompts.get("base")) or not _has_text(prompts.get("identity")):
+        return False
+
+    if not _has_text(record.get("ground_truth")):
+        return False
+
+    outputs = record.get("outputs") or {}
+    for model in ["gemini", "gpt", "llama", "deepseek"]:
+        for kind in ["base", "identity"]:
+            text = ((outputs.get(model) or {}).get(kind) or {}).get("text")
+            if not _has_text(text):
+                return False
+
+    return True
+
 @app.route("/", methods=["GET", "POST"])
 @login_required
 def annotate():
@@ -658,7 +680,7 @@ def admin():
             annotator_name = (r.get("annotator_name") or "").strip().lower()
             if query_annotator.lower() not in annotator_name:
                 continue
-        filtered_records.append(r)
+        filtered_records.append({**r, "_is_completed": _is_annotation_completed(r)})
 
     filtered_records.sort(
         key=lambda r: str(r.get("timestamp") or r.get("created_at") or ""),
@@ -818,6 +840,11 @@ def load_annotation():
             r for r in records
             if r["annotator_name"] == user
         ]
+
+    user_records = [
+        {**r, "_is_completed": _is_annotation_completed(r)}
+        for r in user_records
+    ]
 
     if request.method == "POST":
         annotation_id = request.form.get("annotation_id", "").strip()

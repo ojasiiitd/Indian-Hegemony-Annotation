@@ -303,7 +303,7 @@
         color: #fde68a !important;
     }
 
-    .nav-active::after {
+    .nav-links .nav-active::after {
         width: 100% !important;
     }
 
@@ -312,9 +312,17 @@
         color: #a4b3c9 !important;
     }
 
-    .nav-active-secondary::after {
+    .nav-links .nav-active-secondary::after {
         background-color: #9ca3af;
         width: 100% !important;
+    }
+
+    .navbar-end .navbar-link.nav-active-secondary {
+        box-shadow: inset 0 -2px 0 #9ca3af;
+    }
+
+    .navbar-end .navbar-link.nav-active-secondary:not(.is-arrowless)::after {
+        border-color: #a4b3c9;
     }
 
     /* Admin */
