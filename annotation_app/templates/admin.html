@@ -63,6 +63,19 @@
     justify-content: center;
     font-weight: 600;
   }
+
+  .admin-query-table tbody tr.onboarded-row td {
+    background-color: #f6fff8 !important;
+    box-shadow: inset 0 2px 0 #7bc48b, inset 0 -2px 0 #7bc48b;
+  }
+
+  .admin-query-table tbody tr.onboarded-row td:first-child {
+    box-shadow: inset 2px 0 0 #7bc48b, inset 0 2px 0 #7bc48b, inset 0 -2px 0 #7bc48b;
+  }
+
+  .admin-query-table tbody tr.onboarded-row td:last-child {
+    box-shadow: inset -2px 0 0 #7bc48b, inset 0 2px 0 #7bc48b, inset 0 -2px 0 #7bc48b;
+  }
 </style>
 {% endblock %}
 
@@ -187,6 +200,7 @@
           <table class="table is-fullwidth is-hoverable is-zebra-neutral admin-query-table">
             <thead>
               <tr>
+                <th width="8%">Sr. No.</th>
                 <th width="12%">Date</th>
                 <th width="14%">State</th>
                 <th width="14%">Annotator</th>
@@ -197,7 +211,8 @@
             </thead>
             <tbody>
               {% for r in filtered_records %}
-              <tr>
+              <tr class="{% if r._is_onboarded %}onboarded-row{% endif %}">
+                <td>{{ loop.index }}.</td>
                 <td>{{ (r.timestamp or r.created_at or "")[:10] }}</td>
                 <td>{{ r.state }}</td>
                 <td>{{ r.annotator_name }}</td>

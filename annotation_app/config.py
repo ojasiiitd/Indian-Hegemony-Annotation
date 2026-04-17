@@ -11,10 +11,28 @@ REGION_STATE_MAP = {
     "West": ["Maharashtra", "Gujarat", "Goa"]
 }
 
+# Update this list whenever new annotators are onboarded and should be highlighted in admin.
+ONBOARDED_ANNOTATOR_USERNAMES = [
+	"Arnab6203",
+	"nishtharajput",
+	"Manasikelkar26",
+	"Riddhi Vora",
+	"Ajit Rana",
+	"Priyanka",
+	"Riddhi157",
+	"tauseefqamar007",
+	"Aishwarya Gadgil",
+	"Ashish",
+	"Manshi Patel",
+	"Veera Hymavathi Sirisipalli",
+	"Sylesh",
+	"Subham48",
+]
+
 HEGEMONY_AXES = [
 	"social",
 	"economic",
-	"religious",
+	"religious",	
 	"gender",
 	"linguistic",
 	"colorism"

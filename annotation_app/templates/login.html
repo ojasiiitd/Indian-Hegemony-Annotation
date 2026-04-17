@@ -26,8 +26,12 @@
       <div class="field">
         <label class="label">Password</label>
         <div class="control">
-          <input class="input" type="password" name="password" required>
+          <input class="input" id="login_password" type="password" name="password" required>
         </div>
+        <label class="checkbox mt-2 is-size-7 has-text-grey">
+          <input type="checkbox" id="toggle_login_password">
+          Show password
+        </label>
       </div>
 
       <div class="field mt-4">
@@ -46,4 +50,17 @@
 
 </section>
 
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const loginPasswordInput = document.getElementById("login_password");
+  const toggleLoginPassword = document.getElementById("toggle_login_password");
+
+  if (loginPasswordInput && toggleLoginPassword) {
+    toggleLoginPassword.addEventListener("change", () => {
+      loginPasswordInput.type = toggleLoginPassword.checked ? "text" : "password";
+    });
+  }
+</script>
 {% endblock %}

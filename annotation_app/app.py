@@ -43,6 +43,17 @@ EXAMPLE_ANNOTATION_IDS = [
     "adc1750a-538e-4c0a-907d-dc67c5baba08"
 ]
 
+
+def _normalize_username(value):
+    return " ".join(str(value or "").split()).casefold()
+
+
+ONBOARDED_ANNOTATOR_SET = {
+    _normalize_username(username)
+    for username in ONBOARDED_ANNOTATOR_USERNAMES
+    if _normalize_username(username)
+}
+
 @app.before_request
 def validate_session():
     try:
@@ -680,7 +691,11 @@ def admin():
             annotator_name = (r.get("annotator_name") or "").strip().lower()
             if query_annotator.lower() not in annotator_name:
                 continue
-        filtered_records.append({**r, "_is_completed": _is_annotation_completed(r)})
+        filtered_records.append({
+            **r,
+            "_is_completed": _is_annotation_completed(r),
+            "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
+        })
 
     filtered_records.sort(
         key=lambda r: str(r.get("timestamp") or r.get("created_at") or ""),

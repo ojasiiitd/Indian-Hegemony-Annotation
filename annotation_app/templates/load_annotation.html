@@ -79,6 +79,7 @@
           <table class="table is-fullwidth is-hoverable is-zebra-neutral load-table">
             <thead>
               <tr>
+                <th width="8%">Sr. No.</th>
                 <th width="16%">ID</th>
                 <th width="12%">State</th>
                 <th width="12%">Status</th>
@@ -91,6 +92,7 @@
               {% for r in user_records|reverse %}
               {% set reviewed_by = review_counts.get(r.id, 0) %}
               <tr>
+                <td>{{ loop.index }}.</td>
                 <td style="font-family: monospace; font-size: 0.85rem;">
                   {{ r.id }}
                 </td>
