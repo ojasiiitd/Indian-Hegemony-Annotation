@@ -196,7 +196,7 @@ async function checkPromptSimilarity() {
     }).join("");
 
     resultBox.innerHTML = `
-      <p><strong>Similar prompts found. Another annotator from the same state has used a similar prompt. Please use a different prompt.</strong></p>
+      <p><strong>Similar prompts found. Another annotator from the same state has used a similar prompt. Please manually ensure that your prompt is different.</strong></p>
       <ul>${lines}</ul>
     `;
   } catch (err) {

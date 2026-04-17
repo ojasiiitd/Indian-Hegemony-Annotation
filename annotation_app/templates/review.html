@@ -147,6 +147,57 @@
       </div>
     </div>
 
+    {% if admin_review %}
+    <div class="card mb-5">
+      <div class="card-content">
+        <h2 class="title is-5">Expert Review</h2>
+        <p class="subtitle mb-4">Admin-only comments and validation status for this annotation.</p>
+
+        {% if admin_review_saved %}
+          <div class="notification is-success is-light">
+            Expert review saved to {{ data_source }}.
+          </div>
+        {% endif %}
+
+        {% if admin_review_error %}
+          <div class="notification is-warning is-light">
+            {{ admin_review_error }}
+          </div>
+        {% endif %}
+
+        <form method="POST">
+          <div class="field">
+            <label class="label">Expert Review Comments</label>
+            <div class="control">
+              <textarea class="textarea"
+                        name="expert_reviews"
+                        rows="5"
+                        placeholder="Add admin review comments here...">{{ record.expert_reviews or "" }}</textarea>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="label">Acceptable</label>
+            <label class="radio mr-4">
+              <input type="radio" name="isAccept" value="yes" {% if admin_is_accepted %}checked{% endif %}>
+              Yes
+            </label>
+            <label class="radio">
+              <input type="radio" name="isAccept" value="no" {% if not admin_is_accepted %}checked{% endif %}>
+              No
+            </label>
+          </div>
+
+          <div class="field mt-4">
+            <button class="button is-success" type="submit">
+              Save Expert Review
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
     <div class="card">
       <div class="card-content">
         <div class="columns is-vcentered">

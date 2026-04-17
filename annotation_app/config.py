@@ -191,4 +191,6 @@ HEADERS = [
 
 	# --- references ---
 	"references",
+	"expert_reviews",
+	"isAccept",
 ]

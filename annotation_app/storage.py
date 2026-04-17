@@ -150,7 +150,9 @@ def build_record(form):
             },
 
             "ground_truth": form.get("ground_truth"),
-            "references": form.get("references", "")
+            "references": form.get("references", ""),
+            "expert_reviews": form.get("expert_reviews", ""),
+            "isAccept": form.get("isAccept", ""),
         }
 
 # =====================================================
@@ -219,5 +221,9 @@ def json_to_row(record):
 
     # --- references ---
     row.append(record.get("references", ""))
+
+    # --- expert review metadata ---
+    row.append(record.get("expert_reviews", ""))
+    row.append(record.get("isAccept", ""))
 
     return row

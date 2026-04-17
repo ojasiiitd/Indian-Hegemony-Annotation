@@ -59,6 +59,8 @@ def _row_map_to_record(row_map: dict) -> dict:
         "outputs": {},
         "ground_truth": row_map.get("ground_truth", ""),
         "references": row_map.get("references", ""),
+        "expert_reviews": row_map.get("expert_reviews", ""),
+        "isAccept": row_map.get("isAccept", ""),
     }
 
     for model in ["gemini", "gpt", "llama", "deepseek"]:

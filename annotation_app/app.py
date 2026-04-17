@@ -86,6 +86,61 @@ def _safe_upsert_prompt_embedding(record):
         print(f"⚠️ Prompt embedding upsert failed for {record.get('id')}: {e}")
 
 
+def _preserve_record_fields(record, existing_record, field_names):
+    if not existing_record:
+        return record
+
+    for field_name in field_names:
+        if field_name not in record or record.get(field_name, "") == "":
+            record[field_name] = existing_record.get(field_name, "")
+
+    return record
+
+
+def _load_annotation_record(annotation_id):
+    try:
+        records = load_records_from_sheet()
+        data_source = "Google Sheets"
+        load_error = None
+    except Exception as e:
+        records = load_records()
+        data_source = "Local JSONL (fallback)"
+        load_error = f"Could not load records from Google Sheets: {e}. Showing local data."
+
+    record = next((r for r in records if r.get("id") == annotation_id), None)
+    return record, data_source, load_error
+
+
+def _sync_local_record_fields(record_id, field_updates):
+    records = load_records()
+    updated = False
+
+    for record in records:
+        if record.get("id") != record_id:
+            continue
+        record.update(field_updates)
+        updated = True
+        break
+
+    if updated:
+        rewrite_jsonl(records)
+
+    return updated
+
+
+def _is_checked_value(value):
+    return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted"}
+
+
+def _acceptance_status(value):
+    clean_value = str(value or "").strip()
+    if not clean_value:
+        return "pending"
+    if _is_checked_value(clean_value):
+        return "accepted"
+    return "rejected"
+
+
 def _persist_annotation_record(record, editing_id=None):
     """
     Persist annotation exactly like confirm flow.
@@ -102,6 +157,12 @@ def _persist_annotation_record(record, editing_id=None):
             _safe_upsert_prompt_embedding(record)
             return record["id"], "created"
 
+        existing_record = next((r for r in records if r["id"] == editing_id), None)
+        record = _preserve_record_fields(
+            record,
+            existing_record,
+            ["expert_reviews", "isAccept"],
+        )
         record["id"] = editing_id
         updated_records = []
         for r in records:
@@ -531,6 +592,8 @@ def examples():
             "outputs": r.get("outputs", {}),
             "ground_truth": r.get("ground_truth", ""),
             "references": r.get("references", ""),
+            "expert_reviews": r.get("expert_reviews", ""),
+            "isAccept": r.get("isAccept", ""),
         })
 
     return render_template("examples.html", samples=samples)
@@ -616,11 +679,14 @@ def admin():
     )
 
     state_annotation_count = Counter()
+    validated_state_annotation_count = Counter()
     state_active_annotators = defaultdict(set)
     for r in records:
         state = (r.get("state") or "Unknown").strip() or "Unknown"
         username = (r.get("annotator_name") or "").strip()
         state_annotation_count[state] += 1
+        if _is_checked_value(r.get("isAccept")):
+            validated_state_annotation_count[state] += 1
         if username:
             state_active_annotators[state].add(username)
 
@@ -635,6 +701,12 @@ def admin():
         })
 
     state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    validated_state_stats = [
+        {"state": state, "annotation_count": count}
+        for state, count in validated_state_annotation_count.items()
+    ]
+    validated_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
 
     daily_annotation_count = Counter()
     for r in records:
@@ -695,6 +767,7 @@ def admin():
             **r,
             "_is_completed": _is_annotation_completed(r),
             "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
+            "_acceptance_status": _acceptance_status(r.get("isAccept")),
         })
 
     filtered_records.sort(
@@ -715,6 +788,7 @@ def admin():
         records=records,
         annotator_stats=annotator_stats,
         state_stats=state_stats,
+        validated_state_stats=validated_state_stats,
         daily_progress=daily_progress,
         filtered_records=filtered_records,
         available_states=available_states,
@@ -727,23 +801,46 @@ def admin():
     )
 
 
-@app.route("/admin/load/<annotation_id>")
+@app.route("/admin/load/<annotation_id>", methods=["GET", "POST"])
 @admin_required
 def admin_load_annotation(annotation_id):
-    try:
-        records = load_records_from_sheet()
-    except Exception:
-        records = load_records()
-
-    record = next((r for r in records if r.get("id") == annotation_id), None)
+    record, data_source, load_error = _load_annotation_record(annotation_id)
     if not record:
         abort(404)
+
+    admin_review_error = load_error
+
+    if request.method == "POST":
+        updated_record = {
+            **record,
+            "expert_reviews": (request.form.get("expert_reviews") or "").strip(),
+            "isAccept": "yes" if request.form.get("isAccept") == "yes" else "no",
+        }
+
+        try:
+            update_row_by_id(annotation_id, json_to_row(updated_record))
+            _sync_local_record_fields(
+                annotation_id,
+                {
+                    "expert_reviews": updated_record.get("expert_reviews", ""),
+                    "isAccept": updated_record.get("isAccept", "no"),
+                },
+            )
+            return redirect(url_for("admin_load_annotation", annotation_id=annotation_id, saved="1"))
+        except Exception as e:
+            admin_review_error = f"Could not save expert review: {e}"
+            record = updated_record
 
     return render_template(
         "review.html",
         record=record,
         view_only=True,
-        back_url=url_for("admin")
+        back_url=url_for("admin"),
+        admin_review=True,
+        admin_review_saved=request.args.get("saved") == "1",
+        admin_review_error=admin_review_error,
+        admin_is_accepted=_is_checked_value(record.get("isAccept")),
+        data_source=data_source,
     )
 
 

@@ -64,6 +64,43 @@
     font-weight: 600;
   }
 
+  .admin-query-table .acceptance-cell {
+    text-align: center;
+    vertical-align: middle;
+  }
+
+  .admin-query-table .acceptance-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 999px;
+    border: 1.5px solid transparent;
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .admin-query-table .acceptance-mark.pending {
+    border-style: dashed;
+    border-color: rgba(149, 157, 178, 0.8);
+    color: rgba(149, 157, 178, 0.9);
+    background-color: transparent;
+  }
+
+  .admin-query-table .acceptance-mark.accepted {
+    border-color: #48a868;
+    color: #2f8f4e;
+    background-color: rgba(72, 168, 104, 0.12);
+  }
+
+  .admin-query-table .acceptance-mark.rejected {
+    border-color: #df5f5f;
+    color: #c23d3d;
+    background-color: rgba(223, 95, 95, 0.12);
+  }
+
   .admin-query-table tbody tr.onboarded-row td {
     background-color: #f6fff8 !important;
     box-shadow: inset 0 2px 0 #7bc48b, inset 0 -2px 0 #7bc48b;
@@ -133,10 +170,18 @@
     <div class="card mb-5">
       <div class="card-content">
         <h2 class="title is-5">Progress Visualizations</h2>
-        <div>
-          <p class="has-text-weight-semibold mb-2">Annotations by State</p>
-          <div style="max-width: 420px;">
-            <canvas id="stateAnnotationsChart" height="220"></canvas>
+        <div class="columns is-variable is-5 is-multiline">
+          <div class="column is-6">
+            <p class="has-text-weight-semibold mb-2">Total Annotations by State</p>
+            <div style="max-width: 420px;">
+              <canvas id="stateAnnotationsChart" height="220"></canvas>
+            </div>
+          </div>
+          <div class="column is-6">
+            <p class="has-text-weight-semibold mb-2">Validated Annotations by State</p>
+            <div style="max-width: 420px;">
+              <canvas id="validatedStateAnnotationsChart" height="220"></canvas>
+            </div>
           </div>
         </div>
         <hr>
@@ -207,6 +252,7 @@
                 <th width="10%">Status</th>
                 <th>Base Prompt</th>
                 <th width="10%"></th>
+                <th width="8%">Acceptable</th>
               </tr>
             </thead>
             <tbody>
@@ -236,6 +282,15 @@
                     Load
                   </a>
                 </td>
+                <td class="acceptance-cell">
+                  {% if r._acceptance_status == "accepted" %}
+                    <span class="acceptance-mark accepted" title="Acceptable">✓</span>
+                  {% elif r._acceptance_status == "rejected" %}
+                    <span class="acceptance-mark rejected" title="Not acceptable">✕</span>
+                  {% else %}
+                    <span class="acceptance-mark pending" title="To be done">…</span>
+                  {% endif %}
+                </td>
               </tr>
               {% endfor %}
             </tbody>
@@ -253,10 +308,13 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const stateStats = {{ state_stats | tojson }};
+  const validatedStateStats = {{ validated_state_stats | tojson }};
   const dailyProgress = {{ daily_progress | tojson }};
 
   const stateLabels = stateStats.map((row) => row.state);
   const stateCounts = stateStats.map((row) => row.annotation_count);
+  const validatedStateLabels = validatedStateStats.map((row) => row.state);
+  const validatedStateCounts = validatedStateStats.map((row) => row.annotation_count);
   const dailyLabels = dailyProgress.map((row) => row.date);
   const dailyCounts = dailyProgress.map((row) => row.count);
 
@@ -286,6 +344,29 @@
     });
   } else if (stateCtx) {
     stateCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No annotation data yet.</p>");
+  }
+
+  const validatedStateCtx = document.getElementById("validatedStateAnnotationsChart");
+  if (validatedStateCtx && validatedStateCounts.some((x) => x > 0)) {
+    new Chart(validatedStateCtx, {
+      type: "pie",
+      data: {
+        labels: validatedStateLabels,
+        datasets: [{
+          data: validatedStateCounts,
+          backgroundColor: validatedStateLabels.map((_, i) => stateColors[i % stateColors.length]),
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: "bottom" }
+        }
+      }
+    });
+  } else if (validatedStateCtx) {
+    validatedStateCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No validated annotations yet.</p>");
   }
 
   const dailyCtx = document.getElementById("dailyProgressChart");
