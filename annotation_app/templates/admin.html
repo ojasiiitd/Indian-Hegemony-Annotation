@@ -10,13 +10,52 @@
   }
 
   .admin-query-table .prompt-preview {
-    max-height: 110px;
+    max-height: 220px;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 4;
+    -webkit-line-clamp: 8;
     -webkit-box-orient: vertical;
-    line-height: 1.35;
-    white-space: normal;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .admin-query-table .prompt-label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #5f647d;
+  }
+
+  .admin-query-table .prompt-details {
+    margin-top: 0.75rem;
+  }
+
+  .admin-query-table .prompt-details summary {
+    cursor: pointer;
+    color: #7a819d;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+  }
+
+  .admin-query-table .prompt-details[open] summary {
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-query-table .prompt-details summary:hover {
+    color: #5f6786;
+  }
+
+  .admin-query-table .prompt-detail-body {
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   .admin-query-table .status-tag {
@@ -152,7 +191,6 @@
                 <th width="14%">State</th>
                 <th width="14%">Annotator</th>
                 <th width="10%">Status</th>
-                <th width="22%">ID</th>
                 <th>Base Prompt</th>
                 <th width="10%"></th>
               </tr>
@@ -170,11 +208,12 @@
                     <span class="tag is-warning is-light status-tag">Draft</span>
                   {% endif %}
                 </td>
-                <td style="font-family: monospace; font-size: 0.85rem;">{{ r.id }}</td>
                 <td>
-                  <div class="prompt-preview" title="{{ r.prompts.base }}">
-                    {{ r.prompts.base }}
-                  </div>
+                  <div class="prompt-preview" title="{{ r.prompts.base }}">{{ r.prompts.base }}</div>
+                  <details class="prompt-details">
+                    <summary>Show Identity-Primed Prompt</summary>
+                    <div class="prompt-detail-body" title="{{ r.prompts.identity }}">{{ r.prompts.identity }}</div>
+                  </details>
                 </td>
                 <td>
                   <a class="button is-small is-link is-light"
