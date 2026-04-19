@@ -21,6 +21,7 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Priyanka",
 	"Riddhi157",
 	"tauseefqamar007",
+	"tauseef",
 	"Aishwarya Gadgil",
 	"Ashish",
 	"Manshi Patel",
