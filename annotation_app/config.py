@@ -194,4 +194,5 @@ HEADERS = [
 	"references",
 	"expert_reviews",
 	"isAccept",
+	"annotator_addressed",
 ]

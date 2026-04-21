@@ -84,13 +84,21 @@
     background: rgba(241, 70, 104, 0.05);
   }
 
+  .load-table tbody tr.is-restructure-row td {
+    border-top: 2px solid #f1b545;
+    border-bottom: 2px solid #f1b545;
+    background: rgba(241, 181, 69, 0.09);
+  }
+
   .load-table tbody tr.is-accepted-row td:first-child,
-  .load-table tbody tr.is-rejected-row td:first-child {
+  .load-table tbody tr.is-rejected-row td:first-child,
+  .load-table tbody tr.is-restructure-row td:first-child {
     border-left: 2px solid;
   }
 
   .load-table tbody tr.is-accepted-row td:last-child,
-  .load-table tbody tr.is-rejected-row td:last-child {
+  .load-table tbody tr.is-rejected-row td:last-child,
+  .load-table tbody tr.is-restructure-row td:last-child {
     border-right: 2px solid;
   }
 
@@ -102,6 +110,11 @@
   .load-table tbody tr.is-rejected-row td:first-child,
   .load-table tbody tr.is-rejected-row td:last-child {
     border-color: #f14668;
+  }
+
+  .load-table tbody tr.is-restructure-row td:first-child,
+  .load-table tbody tr.is-restructure-row td:last-child {
+    border-color: #f1b545;
   }
 </style>
 {% endblock %}
@@ -147,7 +160,7 @@
             <tbody>
               {% for r in user_records|reverse %}
               {% set reviewed_by = review_counts.get(r.id, 0) %}
-              <tr class="{% if r._acceptance_status == 'accepted' %}is-accepted-row{% elif r._acceptance_status == 'rejected' %}is-rejected-row{% endif %}">
+              <tr class="{% if r._acceptance_status == 'accepted' %}is-accepted-row{% elif r._acceptance_status == 'needs_restructuring' %}is-restructure-row{% elif r._acceptance_status == 'rejected' %}is-rejected-row{% endif %}">
                 <td>{{ loop.index }}.</td>
                 <td style="font-family: monospace; font-size: 0.85rem;">
                   {{ r.id }}
@@ -180,7 +193,7 @@
                            value="{{ r.id }}">
                     <input type="hidden" name="load_mode" value="edit">
                     <button class="button is-small is-link is-light"
-                            {% if reviewed_by >= 1 %}disabled{% endif %}>
+                            {% if reviewed_by >= 1 and r._acceptance_status != "needs_restructuring" %}disabled{% endif %}>
                       Edit
                     </button>
                   </form>

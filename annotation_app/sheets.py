@@ -41,6 +41,19 @@ _client = gspread.authorize(_creds)
 _worksheet = _client.open(SHEET_NAME).worksheet(MAIN_SHEET)
 
 
+def _ensure_sheet_headers(worksheet, headers):
+    existing_headers = worksheet.row_values(1)
+    if existing_headers == headers:
+        return
+
+    worksheet.resize(cols=max(worksheet.col_count, len(headers)))
+    worksheet.update(
+        f"A1:{gspread.utils.rowcol_to_a1(1, len(headers))}",
+        [headers],
+        value_input_option="RAW"
+    )
+
+
 def _normalize_yes_no(value: str) -> str:
     return "yes" if str(value).strip().lower() == "yes" else "no"
 
@@ -61,6 +74,7 @@ def _row_map_to_record(row_map: dict) -> dict:
         "references": row_map.get("references", ""),
         "expert_reviews": row_map.get("expert_reviews", ""),
         "isAccept": row_map.get("isAccept", ""),
+        "annotator_addressed": row_map.get("annotator_addressed", ""),
     }
 
     for model in ["gemini", "gpt", "llama", "deepseek"]:
@@ -93,6 +107,7 @@ def load_records_from_sheet() -> list:
     Read records from the primary worksheet and convert flattened rows
     back into the nested annotation JSON shape used by the app.
     """
+    _ensure_sheet_headers(_worksheet, HEADERS)
     values = _worksheet.get_all_values()
 
     if not values or len(values) < 2:
@@ -258,6 +273,7 @@ def append_row(row: list):
     # 2. Append to primary sheet
     # ---------------------------
     try:
+        _ensure_sheet_headers(_worksheet, HEADERS)
         _worksheet.append_row(row, value_input_option="RAW")
         primary_ok = True
     except Exception as e:
@@ -271,6 +287,7 @@ def append_row(row: list):
     # ---------------------------
     try:
         backup_ws = _client.open(SHEET_NAME).worksheet(BACKUP_SHEET)
+        _ensure_sheet_headers(backup_ws, HEADERS)
         backup_ws.append_row(row, value_input_option="RAW")
         backup_ok = True
     except Exception as e:
@@ -294,6 +311,7 @@ def append_row(row: list):
 
 
 def clear_sheet_data():
+    _ensure_sheet_headers(_worksheet, HEADERS)
     print("Clearing worksheet:", _worksheet.title)
     rows = _worksheet.row_count
     if rows > 1:
@@ -329,6 +347,7 @@ def update_row_by_id(record_id: str, row: list):
         )
 
     # -------- PRIMARY --------
+    _ensure_sheet_headers(_worksheet, HEADERS)
     cell = _worksheet.find(record_id)
 
     if not cell:
@@ -345,6 +364,7 @@ def update_row_by_id(record_id: str, row: list):
     # -------- BACKUP --------
     try:
         backup_ws = _client.open(SHEET_NAME).worksheet(BACKUP_SHEET)
+        _ensure_sheet_headers(backup_ws, HEADERS)
         backup_cell = backup_ws.find(record_id)
 
         if backup_cell:

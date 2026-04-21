@@ -132,12 +132,43 @@ def _is_checked_value(value):
     return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted"}
 
 
+def _is_restructure_value(value):
+    return str(value or "").strip().casefold().replace(" ", "_") in {
+        "needs_restructuring",
+        "needs-restructuring",
+        "restructure",
+        "needsrestructuring",
+    }
+
+
+def _normalize_acceptance_choice(value):
+    clean_value = str(value or "").strip()
+    if _is_checked_value(clean_value):
+        return "yes"
+    if _is_restructure_value(clean_value):
+        return "needs_restructuring"
+    if clean_value.casefold() == "no":
+        return "no"
+    return ""
+
+
+def _annotator_addressed_status(value):
+    clean_value = str(value or "").strip().casefold()
+    if clean_value == "yes":
+        return "yes"
+    if clean_value == "no":
+        return "no"
+    return "pending"
+
+
 def _acceptance_status(value):
     clean_value = str(value or "").strip()
     if not clean_value:
         return "pending"
     if _is_checked_value(clean_value):
         return "accepted"
+    if _is_restructure_value(clean_value):
+        return "needs_restructuring"
     return "rejected"
 
 
@@ -161,7 +192,7 @@ def _persist_annotation_record(record, editing_id=None):
         record = _preserve_record_fields(
             record,
             existing_record,
-            ["expert_reviews", "isAccept"],
+            ["expert_reviews", "isAccept", "annotator_addressed"],
         )
         record["id"] = editing_id
         updated_records = []
@@ -594,6 +625,7 @@ def examples():
             "references": r.get("references", ""),
             "expert_reviews": r.get("expert_reviews", ""),
             "isAccept": r.get("isAccept", ""),
+            "annotator_addressed": r.get("annotator_addressed", ""),
         })
 
     return render_template("examples.html", samples=samples)
@@ -768,6 +800,7 @@ def admin():
             "_is_completed": _is_annotation_completed(r),
             "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
             "_acceptance_status": _acceptance_status(r.get("isAccept")),
+            "_annotator_addressed_status": _annotator_addressed_status(r.get("annotator_addressed")),
         })
 
     filtered_records.sort(
@@ -811,10 +844,17 @@ def admin_load_annotation(annotation_id):
     admin_review_error = load_error
 
     if request.method == "POST":
+        selected_acceptance = _normalize_acceptance_choice(request.form.get("isAccept"))
         updated_record = {
             **record,
             "expert_reviews": (request.form.get("expert_reviews") or "").strip(),
-            "isAccept": "yes" if request.form.get("isAccept") == "yes" else "no",
+            "isAccept": selected_acceptance,
+            "annotator_addressed": (
+                record.get("annotator_addressed", "")
+                if selected_acceptance == "needs_restructuring"
+                and _acceptance_status(record.get("isAccept")) == "needs_restructuring"
+                else ""
+            ),
         }
 
         try:
@@ -823,7 +863,8 @@ def admin_load_annotation(annotation_id):
                 annotation_id,
                 {
                     "expert_reviews": updated_record.get("expert_reviews", ""),
-                    "isAccept": updated_record.get("isAccept", "no"),
+                    "isAccept": updated_record.get("isAccept", ""),
+                    "annotator_addressed": updated_record.get("annotator_addressed", ""),
                 },
             )
             return redirect(url_for("admin_load_annotation", annotation_id=annotation_id, saved="1"))
@@ -839,7 +880,8 @@ def admin_load_annotation(annotation_id):
         admin_review=True,
         admin_review_saved=request.args.get("saved") == "1",
         admin_review_error=admin_review_error,
-        admin_is_accepted=_is_checked_value(record.get("isAccept")),
+        admin_acceptance_value=_normalize_acceptance_choice(record.get("isAccept")),
+        annotator_addressed_status=_annotator_addressed_status(record.get("annotator_addressed")),
         data_source=data_source,
     )
 
@@ -958,6 +1000,7 @@ def load_annotation():
             **r,
             "_is_completed": _is_annotation_completed(r),
             "_acceptance_status": _acceptance_status(r.get("isAccept")),
+            "_annotator_addressed_status": _annotator_addressed_status(r.get("annotator_addressed")),
         }
         for r in user_records
     ]
@@ -983,7 +1026,10 @@ def load_annotation():
                         view_only=True
                     )
 
-                if review_counts.get(annotation_id, 0) >= 1:
+                if (
+                    review_counts.get(annotation_id, 0) >= 1
+                    and _acceptance_status(record.get("isAccept")) != "needs_restructuring"
+                ):
                     return render_template(
                         "load_annotation.html",
                         error="This annotation has already been reviewed and can no longer be edited.",

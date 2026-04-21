@@ -74,6 +74,12 @@
     border: 1px solid #f3b8c4;
   }
 
+  .sticky-review-status.is-restructure {
+    color: #9a6700;
+    background: #fff4d6;
+    border: 1px solid #f3d28a;
+  }
+
   .sticky-review-status.is-pending {
     color: #6b7280;
     background: #f3f4f6;
@@ -88,6 +94,14 @@
     border: 1px solid #d7deea;
     border-radius: 10px;
     padding: 0.85rem 1rem;
+  }
+
+  .addressed-note {
+    margin-top: 0.85rem;
+    padding: 0.75rem 0.9rem;
+    border-radius: 10px;
+    background: #fff9e8;
+    border: 1px solid #f2ddb1;
   }
 </style>
 {% endblock %}
@@ -111,6 +125,7 @@
           <input type="hidden" id="current_annotation_id" value="{{ current_annotation_id or '' }}">
           <textarea name="expert_reviews" class="is-hidden" aria-hidden="true">{{ draft.expert_reviews if draft else "" }}</textarea>
           <input type="hidden" name="isAccept" value="{{ draft.isAccept if draft else '' }}">
+          {% set sticky_review_status = (draft.isAccept if draft else "") | default("", true) | trim | lower %}
 
           <!-- REGION / STATE -->
           <div class="card mb-5">
@@ -174,16 +189,39 @@
               </div>
 
               <div class="sticky-review-notes">
-                {% set sticky_review_status = (draft.isAccept if draft else "") | default("", true) | trim | lower %}
                 <label class="label">Expert Review</label>
                 {% if sticky_review_status == "yes" %}
                   <div class="sticky-review-status is-accepted">Accepted</div>
+                {% elif sticky_review_status == "needs_restructuring" %}
+                  <div class="sticky-review-status is-restructure">Needs Restructuring</div>
                 {% elif sticky_review_status == "no" %}
                   <div class="sticky-review-status is-rejected">Not Accepted</div>
                 {% else %}
                   <div class="sticky-review-status is-pending">Awaiting Review</div>
                 {% endif %}
                 <pre class="wrapped-pre expert-review-pre">{{ (draft.expert_reviews if draft else "") or "No expert reviewer comments yet." }}</pre>
+
+                {% if sticky_review_status == "needs_restructuring" %}
+                  <div class="addressed-note">
+                    <label class="label mb-2">Have you addressed the restructuring feedback?</label>
+                    <label class="radio mr-4">
+                      <input type="radio"
+                             name="annotator_addressed"
+                             value="yes"
+                             {% if draft and draft.annotator_addressed == "yes" %}checked{% endif %}>
+                      Yes
+                    </label>
+                    <label class="radio">
+                      <input type="radio"
+                             name="annotator_addressed"
+                             value="no"
+                             {% if draft and draft.annotator_addressed == "no" %}checked{% endif %}>
+                      No
+                    </label>
+                  </div>
+                {% else %}
+                  <input type="hidden" name="annotator_addressed" value="{{ draft.annotator_addressed if draft else '' }}">
+                {% endif %}
               </div>
             </div>
           </div>

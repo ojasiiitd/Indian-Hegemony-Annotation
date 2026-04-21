@@ -153,6 +153,7 @@ def build_record(form):
             "references": form.get("references", ""),
             "expert_reviews": form.get("expert_reviews", ""),
             "isAccept": form.get("isAccept", ""),
+            "annotator_addressed": form.get("annotator_addressed", ""),
         }
 
 # =====================================================
@@ -225,5 +226,6 @@ def json_to_row(record):
     # --- expert review metadata ---
     row.append(record.get("expert_reviews", ""))
     row.append(record.get("isAccept", ""))
+    row.append(record.get("annotator_addressed", ""))
 
     return row

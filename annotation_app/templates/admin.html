@@ -9,6 +9,13 @@
     vertical-align: top;
   }
 
+  .admin-query-table {
+  table-layout: fixed;
+}
+  .admin-query-table .prompt-preview {
+  -webkit-line-clamp: 10; /* instead of 8 */
+}
+
   .admin-query-table .prompt-preview {
     max-height: 220px;
     overflow: hidden;
@@ -99,6 +106,48 @@
     border-color: #df5f5f;
     color: #c23d3d;
     background-color: rgba(223, 95, 95, 0.12);
+  }
+
+  .admin-query-table .acceptance-mark.restructure {
+    border-color: #d7a33d;
+    color: #9a6700;
+    background-color: rgba(241, 181, 69, 0.16);
+  }
+
+  .admin-query-table .addressed-cell {
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .admin-query-table .addressed-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.8rem;
+    padding: 0.2rem 0.45rem;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+    border: 1px solid transparent;
+  }
+
+  .admin-query-table .addressed-pill.yes {
+    color: #1f6f4a;
+    background: #e8f8f0;
+    border-color: #bde8d3;
+  }
+
+  .admin-query-table .addressed-pill.no {
+    color: #b45309;
+    background: #fff7e6;
+    border-color: #f2ddb1;
+  }
+
+  .admin-query-table .addressed-pill.pending {
+    color: #6b7280;
+    background: #f3f4f6;
+    border-color: #d1d5db;
   }
 
   .admin-query-table tbody tr.onboarded-row td {
@@ -246,13 +295,14 @@
             <thead>
               <tr>
                 <th width="8%">Sr. No.</th>
-                <th width="12%">Date</th>
-                <th width="14%">State</th>
-                <th width="14%">Annotator</th>
-                <th width="10%">Status</th>
-                <th>Base Prompt</th>
-                <th width="10%"></th>
+                <th width="10%">Date</th>
+                <th width="12%">State</th>
+                <th width="10%">Annotator</th> <!-- reduced -->
+                <th width="11%">Status</th>     <!-- reduced -->
+                <th width="23%">Base Prompt</th> <!-- increased -->
+                <th width="8%"></th>
                 <th width="8%">Acceptable</th>
+                <th width="12%">Addressed</th>
               </tr>
             </thead>
             <tbody>
@@ -285,10 +335,25 @@
                 <td class="acceptance-cell">
                   {% if r._acceptance_status == "accepted" %}
                     <span class="acceptance-mark accepted" title="Acceptable">✓</span>
+                  {% elif r._acceptance_status == "needs_restructuring" %}
+                    <span class="acceptance-mark restructure" title="Needs restructuring">✓</span>
                   {% elif r._acceptance_status == "rejected" %}
                     <span class="acceptance-mark rejected" title="Not acceptable">✕</span>
                   {% else %}
                     <span class="acceptance-mark pending" title="To be done">…</span>
+                  {% endif %}
+                </td>
+                <td class="addressed-cell">
+                  {% if r._acceptance_status == "needs_restructuring" %}
+                    {% if r._annotator_addressed_status == "yes" %}
+                      <span class="addressed-pill yes">Yes</span>
+                    {% elif r._annotator_addressed_status == "no" %}
+                      <span class="addressed-pill no">No</span>
+                    {% else %}
+                      <span class="addressed-pill pending">Pending</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="has-text-grey-light">—</span>
                   {% endif %}
                 </td>
               </tr>
