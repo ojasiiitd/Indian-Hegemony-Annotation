@@ -42,6 +42,53 @@
       bottom: 4rem;
     }
   }
+
+  .sticky-review-notes {
+    margin-top: 1.25rem;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.25rem;
+  }
+
+  .sticky-review-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .sticky-review-status.is-accepted {
+    color: #1f6f4a;
+    background: #e8f8f0;
+    border: 1px solid #bde8d3;
+  }
+
+  .sticky-review-status.is-rejected {
+    color: #b42318;
+    background: #fff1f3;
+    border: 1px solid #f3b8c4;
+  }
+
+  .sticky-review-status.is-pending {
+    color: #6b7280;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+  }
+
+  .expert-review-pre {
+    font-family: monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    background: #f8fafc;
+    border: 1px solid #d7deea;
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+  }
 </style>
 {% endblock %}
 
@@ -62,6 +109,8 @@
       <div class="card-content">
         <form method="POST" id="annotation_form">
           <input type="hidden" id="current_annotation_id" value="{{ current_annotation_id or '' }}">
+          <textarea name="expert_reviews" class="is-hidden" aria-hidden="true">{{ draft.expert_reviews if draft else "" }}</textarea>
+          <input type="hidden" name="isAccept" value="{{ draft.isAccept if draft else '' }}">
 
           <!-- REGION / STATE -->
           <div class="card mb-5">
@@ -79,10 +128,10 @@
                       aria-expanded="true"
                       onclick="toggleStickyPrompts()">
                 <span class="mr-1">Show/Hide Prompts</span>
-                <span id="sticky_prompt_toggle_icon" aria-hidden="true">▾</span>
+                <span id="sticky_prompt_toggle_icon" class="prompt-toggle-icon" aria-hidden="true">▾</span>
               </button>
             </header>
-            <div class="card-content" id="sticky_prompt_body">
+            <div class="card-content prompt-collapse-body" id="sticky_prompt_body" data-collapsed="false">
               <div class="columns is-variable is-6">
                 <div class="column">
                   <label class="label">Base Prompt</label>
@@ -122,6 +171,19 @@
                     </button>
                   </div>
                 </div>
+              </div>
+
+              <div class="sticky-review-notes">
+                {% set sticky_review_status = (draft.isAccept if draft else "") | default("", true) | trim | lower %}
+                <label class="label">Expert Review</label>
+                {% if sticky_review_status == "yes" %}
+                  <div class="sticky-review-status is-accepted">Accepted</div>
+                {% elif sticky_review_status == "no" %}
+                  <div class="sticky-review-status is-rejected">Not Accepted</div>
+                {% else %}
+                  <div class="sticky-review-status is-pending">Awaiting Review</div>
+                {% endif %}
+                <pre class="wrapped-pre expert-review-pre">{{ (draft.expert_reviews if draft else "") or "No expert reviewer comments yet." }}</pre>
               </div>
             </div>
           </div>

@@ -3,6 +3,10 @@
 {% block styles %}
 {{ super() }}
 <style>
+  .load-table {
+    table-layout: fixed;
+  }
+
   .load-table td {
     padding-top: 0.9rem;
     padding-bottom: 0.9rem;
@@ -10,19 +14,94 @@
   }
 
   .load-table .prompt-preview {
-    max-height: 110px;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    -webkit-box-orient: vertical;
-    line-height: 1.35;
-    white-space: normal;
+    max-height: 8rem;
+    overflow: auto;
+    display: block;
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-align: left;
+    background: #fcfcfe;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
   }
 
   .load-table .status-tag {
     min-width: 6.75rem;
     justify-content: center;
     font-weight: 600;
+  }
+
+  .load-table .reviewed-by-col,
+  .load-table .reviewed-by-cell {
+    width: 3.25rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .load-table .reviewed-by-col {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .load-table .reviewed-by-cell {
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+  }
+
+  .load-table .comments-preview {
+    display: block;
+    width: 100%;
+    max-height: 8rem;
+    overflow: auto;
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    text-align: left;
+    vertical-align: top;
+    font-family: monospace;
+    font-size: 0.8rem;
+    line-height: 1.45;
+    background: #f8fafc;
+    border: 1px solid #d7deea;
+    border-radius: 10px;
+    padding: 0.65rem 0.75rem;
+  }
+
+  .load-table tbody tr.is-accepted-row td {
+    border-top: 2px solid #48c78e;
+    border-bottom: 2px solid #48c78e;
+    background: rgba(72, 199, 142, 0.05);
+  }
+
+  .load-table tbody tr.is-rejected-row td {
+    border-top: 2px solid #f14668;
+    border-bottom: 2px solid #f14668;
+    background: rgba(241, 70, 104, 0.05);
+  }
+
+  .load-table tbody tr.is-accepted-row td:first-child,
+  .load-table tbody tr.is-rejected-row td:first-child {
+    border-left: 2px solid;
+  }
+
+  .load-table tbody tr.is-accepted-row td:last-child,
+  .load-table tbody tr.is-rejected-row td:last-child {
+    border-right: 2px solid;
+  }
+
+  .load-table tbody tr.is-accepted-row td:first-child,
+  .load-table tbody tr.is-accepted-row td:last-child {
+    border-color: #48c78e;
+  }
+
+  .load-table tbody tr.is-rejected-row td:first-child,
+  .load-table tbody tr.is-rejected-row td:last-child {
+    border-color: #f14668;
   }
 </style>
 {% endblock %}
@@ -39,35 +118,11 @@
       </div>
     </div>
 
-    <div class="card mb-5">
-      <div class="card-content">
-
-        {% if error %}
-          <div class="notification is-danger is-light">
-            {{ error }}
-          </div>
-        {% endif %}
-
-        <form method="POST">
-          <input type="hidden" name="load_mode" value="view">
-          <div class="field">
-            <label class="label">Load by Annotation ID</label>
-            <input class="input"
-                   type="text"
-                   name="annotation_id"
-                   placeholder="Enter annotation ID"
-                   required>
-          </div>
-
-          <div class="field mt-3">
-            <button class="button is-dark">
-              Load →
-            </button>
-          </div>
-        </form>
-
+    {% if error %}
+      <div class="notification is-danger is-light mb-5">
+        {{ error }}
       </div>
-    </div>
+    {% endif %}
 
     <div class="card">
       <div class="card-content">
@@ -84,14 +139,15 @@
                 <th width="12%">State</th>
                 <th width="12%">Status</th>
                 <th>Base Prompt</th>
+                <th width="26%">Comments</th>
                 <th width="10%"></th>
-                <th width="12%">Reviewed By</th>
+                <th class="reviewed-by-col">Reviewed By</th>
               </tr>
             </thead>
             <tbody>
               {% for r in user_records|reverse %}
               {% set reviewed_by = review_counts.get(r.id, 0) %}
-              <tr>
+              <tr class="{% if r._acceptance_status == 'accepted' %}is-accepted-row{% elif r._acceptance_status == 'rejected' %}is-rejected-row{% endif %}">
                 <td>{{ loop.index }}.</td>
                 <td style="font-family: monospace; font-size: 0.85rem;">
                   {{ r.id }}
@@ -110,9 +166,11 @@
                 </td>
 
                 <td>
-                  <div class="prompt-preview" title="{{ r.prompts.base }}">
-                    {{ r.prompts.base }}
-                  </div>
+                  <pre class="prompt-preview" title="{{ r.prompts.base }}">{{- r.prompts.base -}}</pre>
+                </td>
+
+                <td>
+                  <pre class="comments-preview">{{- r.expert_reviews or "No expert reviewer comments yet." -}}</pre>
                 </td>
 
                 <td>
@@ -128,7 +186,7 @@
                   </form>
                 </td>
 
-                <td>
+                <td class="reviewed-by-cell">
                   <span class="has-text-success has-text-weight-semibold">{{ reviewed_by }}</span>
                 </td>
               </tr>

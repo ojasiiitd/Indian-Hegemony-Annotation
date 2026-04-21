@@ -239,6 +239,40 @@
         z-index: 20;
     }
 
+    .prompt-collapse-body {
+        overflow: hidden;
+        opacity: 1;
+        transform: translateY(0);
+        transition:
+            height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+            opacity 0.22s ease,
+            transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+        will-change: height, opacity, transform;
+    }
+
+    .prompt-collapse-body.is-collapsed {
+        opacity: 0;
+        transform: translateY(-10px);
+        pointer-events: none;
+    }
+
+    .prompt-toggle-icon {
+        display: inline-block;
+        transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+        transform-origin: center;
+    }
+
+    .card-header-icon[aria-expanded="false"] .prompt-toggle-icon {
+        transform: rotate(-90deg);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .prompt-collapse-body,
+        .prompt-toggle-icon {
+            transition: none !important;
+        }
+    }
+
     /* NAV LINK BASE */
     .navbar {
         margin: 1rem auto 1.8rem !important;
@@ -564,6 +598,51 @@
           }
         });
       });
+    });
+
+    function toggleCollapsiblePanel(bodyId, iconId) {
+      const body = document.getElementById(bodyId);
+      const icon = document.getElementById(iconId);
+      const toggleBtn = icon ? icon.closest("button") : null;
+      if (!body || !icon) return;
+
+      const isCollapsed = body.dataset.collapsed === "true";
+
+      if (!body.classList.contains("prompt-collapse-body")) {
+        body.classList.add("prompt-collapse-body");
+      }
+
+      if (isCollapsed) {
+        body.hidden = false;
+        body.classList.remove("is-collapsed");
+        body.style.height = "0px";
+        body.offsetHeight;
+        body.style.height = `${body.scrollHeight}px`;
+      } else {
+        body.style.height = `${body.scrollHeight}px`;
+        body.offsetHeight;
+        body.classList.add("is-collapsed");
+        body.style.height = "0px";
+      }
+
+      body.dataset.collapsed = String(!isCollapsed);
+      icon.textContent = isCollapsed ? "▾" : "▸";
+      if (toggleBtn) {
+        toggleBtn.setAttribute("aria-expanded", String(isCollapsed));
+      }
+    }
+
+    document.addEventListener("transitionend", function (event) {
+      const body = event.target;
+      if (!body.classList || !body.classList.contains("prompt-collapse-body") || event.propertyName !== "height") {
+        return;
+      }
+
+      if (body.dataset.collapsed === "true") {
+        body.hidden = true;
+      } else {
+        body.style.height = "auto";
+      }
     });
   </script>
 

@@ -954,7 +954,11 @@ def load_annotation():
         ]
 
     user_records = [
-        {**r, "_is_completed": _is_annotation_completed(r)}
+        {
+            **r,
+            "_is_completed": _is_annotation_completed(r),
+            "_acceptance_status": _acceptance_status(r.get("isAccept")),
+        }
         for r in user_records
     ]
 

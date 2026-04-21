@@ -129,16 +129,7 @@ function escapeHtml(value) {
 }
 
 function toggleStickyPrompts() {
-  const body = document.getElementById("sticky_prompt_body");
-  const icon = document.getElementById("sticky_prompt_toggle_icon");
-  const toggleBtn = icon ? icon.closest("button") : null;
-  if (!body || !icon) return;
-
-  const isCollapsed = body.classList.toggle("is-hidden");
-  icon.textContent = isCollapsed ? "▸" : "▾";
-  if (toggleBtn) {
-    toggleBtn.setAttribute("aria-expanded", String(!isCollapsed));
-  }
+  toggleCollapsiblePanel("sticky_prompt_body", "sticky_prompt_toggle_icon");
 }
 
 async function checkPromptSimilarity() {
