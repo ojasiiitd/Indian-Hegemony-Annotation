@@ -634,14 +634,14 @@
 
     document.addEventListener("transitionend", function (event) {
       const body = event.target;
-      if (!body.classList || !body.classList.contains("prompt-collapse-body") || event.propertyName !== "height") {
-        return;
-      }
+      if (!body.classList || event.propertyName !== "height") return;
 
-      if (body.dataset.collapsed === "true") {
-        body.hidden = true;
-      } else {
-        body.style.height = "auto";
+      if (body.classList.contains("prompt-collapse-body") || body.classList.contains("review-collapse-body")) {
+        if (body.dataset.collapsed === "true") {
+          body.hidden = true;
+        } else {
+          body.style.height = "auto";
+        }
       }
     });
   </script>

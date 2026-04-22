@@ -1037,16 +1037,17 @@ def load_annotation():
                         review_counts=review_counts
                     )
 
-                # # 🔐 Security check
-                # if (
-                #     session["user"]["role"] != "admin"
-                #     and record["annotator_name"] != user
-                # ):
-                #     return render_template(
-                #         "load_annotation.html",
-                #         error="You cannot edit someone else's annotation.",
-                #         user_records=user_records
-                #     )
+                # 🔐 Security check — annotators can only load their own
+                if (
+                    session["user"]["role"] != "admin"
+                    and record["annotator_name"] != user
+                ):
+                    return render_template(
+                        "load_annotation.html",
+                        error="You can only load your own annotations.",
+                        user_records=user_records,
+                        review_counts=review_counts
+                    )
 
                 draft_id = save_draft(record)
                 session["draft_id"] = draft_id

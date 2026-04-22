@@ -6,7 +6,7 @@
   .floating-save-btn {
     position: fixed;
     right: 1.25rem;
-    bottom: 1.25rem;
+    bottom: 4.75rem;
     z-index: 45;
     box-shadow: 0 12px 24px rgba(47, 66, 124, 0.2);
   }
@@ -14,7 +14,7 @@
   .floating-save-status {
     position: fixed;
     right: 1.25rem;
-    bottom: 4.5rem;
+    bottom: 8rem;
     z-index: 45;
     padding: 0.45rem 0.75rem;
     border-radius: 999px;
@@ -43,10 +43,61 @@
     }
   }
 
-  .sticky-review-notes {
-    margin-top: 1.25rem;
-    border-top: 1px solid #e5e7eb;
-    padding-top: 1.25rem;
+  .sticky-review-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 30;
+    background: #fff;
+    border-top: 2px solid #e6e8f0;
+    box-shadow: 0 -4px 24px rgba(47, 66, 124, 0.12);
+  }
+
+  .sticky-review-bottom .review-toggle-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0.45rem 1.25rem;
+    cursor: default;
+  }
+
+  .sticky-review-bottom .review-collapse-body {
+    overflow: hidden;
+    opacity: 1;
+    transform: translateY(0);
+    transition:
+      height 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.22s ease,
+      transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: height, opacity, transform;
+    max-height: 40vh;
+    overflow-y: auto;
+    padding: 0.85rem 1.25rem 1rem;
+  }
+
+  .sticky-review-bottom .review-collapse-body.is-collapsed {
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+  }
+
+  .review-toggle-icon {
+    display: inline-block;
+    transition: transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+    transform-origin: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .sticky-review-bottom .review-collapse-body,
+    .review-toggle-icon {
+      transition: none !important;
+    }
+  }
+
+  /* bottom padding so page content doesn't hide behind sticky review bar */
+  body {
+    padding-bottom: 3.5rem;
   }
 
   .sticky-review-status {
@@ -188,41 +239,6 @@
                 </div>
               </div>
 
-              <div class="sticky-review-notes">
-                <label class="label">Expert Review</label>
-                {% if sticky_review_status == "yes" %}
-                  <div class="sticky-review-status is-accepted">Accepted</div>
-                {% elif sticky_review_status == "needs_restructuring" %}
-                  <div class="sticky-review-status is-restructure">Needs Restructuring</div>
-                {% elif sticky_review_status == "no" %}
-                  <div class="sticky-review-status is-rejected">Not Accepted</div>
-                {% else %}
-                  <div class="sticky-review-status is-pending">Awaiting Review</div>
-                {% endif %}
-                <pre class="wrapped-pre expert-review-pre">{{ (draft.expert_reviews if draft else "") or "No expert reviewer comments yet." }}</pre>
-
-                {% if sticky_review_status == "needs_restructuring" %}
-                  <div class="addressed-note">
-                    <label class="label mb-2">Have you addressed the restructuring feedback?</label>
-                    <label class="radio mr-4">
-                      <input type="radio"
-                             name="annotator_addressed"
-                             value="yes"
-                             {% if draft and draft.annotator_addressed == "yes" %}checked{% endif %}>
-                      Yes
-                    </label>
-                    <label class="radio">
-                      <input type="radio"
-                             name="annotator_addressed"
-                             value="no"
-                             {% if draft and draft.annotator_addressed == "no" %}checked{% endif %}>
-                      No
-                    </label>
-                  </div>
-                {% else %}
-                  <input type="hidden" name="annotator_addressed" value="{{ draft.annotator_addressed if draft else '' }}">
-                {% endif %}
-              </div>
             </div>
           </div>
 
@@ -336,6 +352,56 @@
     </div>
   </div>
 </section>
+
+<!-- STICKY EXPERT REVIEW PANEL (bottom) -->
+<div class="sticky-review-bottom">
+  <div class="review-toggle-bar">
+    <button type="button"
+            class="card-header-icon"
+            aria-label="Toggle expert review panel"
+            aria-expanded="false"
+            onclick="toggleStickyReview()">
+      <span class="mr-1">Show/Hide Review</span>
+      <span id="sticky_review_toggle_icon" class="review-toggle-icon" aria-hidden="true">▴</span>
+    </button>
+  </div>
+  <div class="review-collapse-body is-collapsed" id="sticky_review_body" data-collapsed="true" hidden>
+    {% if sticky_review_status == "yes" %}
+      <div class="sticky-review-status is-accepted">Accepted</div>
+    {% elif sticky_review_status == "needs_restructuring" %}
+      <div class="sticky-review-status is-restructure">Needs Restructuring</div>
+    {% elif sticky_review_status == "no" %}
+      <div class="sticky-review-status is-rejected">Not Accepted</div>
+    {% else %}
+      <div class="sticky-review-status is-pending">Awaiting Review</div>
+    {% endif %}
+    <pre class="wrapped-pre expert-review-pre">{{ (draft.expert_reviews if draft else "") or "No expert reviewer comments yet." }}</pre>
+
+    {% if sticky_review_status == "needs_restructuring" %}
+      <div class="addressed-note">
+        <label class="label mb-2">Have you addressed the restructuring feedback?</label>
+        <label class="radio mr-4">
+          <input type="radio"
+                 name="annotator_addressed"
+                 value="yes"
+                 form="annotation_form"
+                 {% if draft and draft.annotator_addressed == "yes" %}checked{% endif %}>
+          Yes
+        </label>
+        <label class="radio">
+          <input type="radio"
+                 name="annotator_addressed"
+                 value="no"
+                 form="annotation_form"
+                 {% if draft and draft.annotator_addressed == "no" %}checked{% endif %}>
+          No
+        </label>
+      </div>
+    {% else %}
+      <input type="hidden" name="annotator_addressed" value="{{ draft.annotator_addressed if draft else '' }}" form="annotation_form">
+    {% endif %}
+  </div>
+</div>
 
 {% endblock %}
 

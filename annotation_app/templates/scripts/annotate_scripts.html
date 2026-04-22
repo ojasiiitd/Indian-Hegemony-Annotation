@@ -132,6 +132,38 @@ function toggleStickyPrompts() {
   toggleCollapsiblePanel("sticky_prompt_body", "sticky_prompt_toggle_icon");
 }
 
+function toggleStickyReview() {
+  const body = document.getElementById("sticky_review_body");
+  const icon = document.getElementById("sticky_review_toggle_icon");
+  const toggleBtn = icon ? icon.closest("button") : null;
+  if (!body || !icon) return;
+
+  const isCollapsed = body.dataset.collapsed === "true";
+
+  if (!body.classList.contains("review-collapse-body")) {
+    body.classList.add("review-collapse-body");
+  }
+
+  if (isCollapsed) {
+    body.hidden = false;
+    body.classList.remove("is-collapsed");
+    body.style.height = "0px";
+    body.offsetHeight;
+    body.style.height = `${body.scrollHeight}px`;
+  } else {
+    body.style.height = `${body.scrollHeight}px`;
+    body.offsetHeight;
+    body.classList.add("is-collapsed");
+    body.style.height = "0px";
+  }
+
+  body.dataset.collapsed = String(!isCollapsed);
+  icon.textContent = isCollapsed ? "▾" : "▴";
+  if (toggleBtn) {
+    toggleBtn.setAttribute("aria-expanded", String(isCollapsed));
+  }
+}
+
 async function checkPromptSimilarity() {
   const promptBox = document.getElementById("base_prompt_input");
   const stateHidden = document.querySelector("input[name='state']");
