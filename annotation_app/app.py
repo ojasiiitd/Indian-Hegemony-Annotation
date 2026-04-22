@@ -129,7 +129,7 @@ def _sync_local_record_fields(record_id, field_updates):
 
 
 def _is_checked_value(value):
-    return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted"}
+    return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted", "Needs Restructuring", "needs restructuring"}
 
 
 def _is_restructure_value(value):
@@ -717,7 +717,8 @@ def admin():
         state = (r.get("state") or "Unknown").strip() or "Unknown"
         username = (r.get("annotator_name") or "").strip()
         state_annotation_count[state] += 1
-        if _is_checked_value(r.get("isAccept")):
+        acceptance_status = _acceptance_status(r.get("isAccept"))
+        if acceptance_status in ("accepted", "needs_restructuring"):
             validated_state_annotation_count[state] += 1
         if username:
             state_active_annotators[state].add(username)
