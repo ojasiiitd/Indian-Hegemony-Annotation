@@ -162,6 +162,34 @@
   .admin-query-table tbody tr.onboarded-row td:last-child {
     box-shadow: inset -2px 0 0 #7bc48b, inset 0 2px 0 #7bc48b, inset 0 -2px 0 #7bc48b;
   }
+
+  .daily-progress-shell {
+    padding: 1rem 1.1rem 0.75rem;
+    border-radius: 18px;
+    background:
+      radial-gradient(circle at top left, rgba(14, 165, 233, 0.12), transparent 32%),
+      radial-gradient(circle at top right, rgba(34, 197, 94, 0.1), transparent 28%),
+      linear-gradient(180deg, #fbfdff 0%, #f3f8ff 100%);
+    border: 1px solid #d8e7fb;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  }
+
+  .daily-progress-summary {
+    display: flex;
+    gap: 0.9rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.85rem;
+  }
+
+  .daily-progress-chip {
+    padding: 0.55rem 0.8rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.78);
+    border: 1px solid rgba(132, 158, 196, 0.28);
+    color: #244368;
+    font-size: 0.86rem;
+    font-weight: 600;
+  }
 </style>
 {% endblock %}
 
@@ -236,7 +264,14 @@
         <hr>
         <div>
           <p class="has-text-weight-semibold mb-2">Daily Annotations Progress</p>
-          <canvas id="dailyProgressChart" height="120"></canvas>
+          <div class="daily-progress-shell">
+            <div class="daily-progress-summary">
+              <div class="daily-progress-chip">Tracked Days: {{ daily_progress|length }}</div>
+              <div class="daily-progress-chip">Latest Daily Count: {{ daily_progress[-1].count if daily_progress else 0 }}</div>
+              <div class="daily-progress-chip">Cumulative Total: {{ daily_progress[-1].cumulative if daily_progress else 0 }}</div>
+            </div>
+            <canvas id="dailyProgressChart" height="120"></canvas>
+          </div>
         </div>
       </div>
     </div>
@@ -246,10 +281,6 @@
         <h2 class="title is-5">Query Annotations</h2>
         <form method="GET" action="{{ url_for('admin') }}">
           <div class="columns is-variable is-4">
-            <div class="column">
-              <label class="label">Date</label>
-              <input class="input" type="date" name="date" value="{{ query_date }}">
-            </div>
             <div class="column">
               <label class="label">State</label>
               <div class="control select is-fullwidth">
@@ -264,12 +295,32 @@
               </div>
             </div>
             <div class="column">
+              <label class="label">Validation</label>
+              <div class="control select is-fullwidth">
+                <select name="validation">
+                  <option value="" {% if not query_validation %}selected{% endif %}>All</option>
+                  <option value="validated" {% if query_validation == "validated" %}selected{% endif %}>Validated</option>
+                  <option value="non_validated" {% if query_validation == "non_validated" %}selected{% endif %}>Non-Validated</option>
+                </select>
+              </div>
+            </div>
+            <div class="column">
               <label class="label">Annotator Name</label>
               <input class="input"
                      type="text"
                      name="annotator"
                      value="{{ query_annotator }}"
                      placeholder="Enter full/partial name">
+            </div>
+            <div class="column">
+              <label class="label">Sort By</label>
+              <div class="control select is-fullwidth">
+                <select name="sort">
+                  {% for sort_key, sort_label in sort_options.items() %}
+                    <option value="{{ sort_key }}" {% if query_sort == sort_key %}selected{% endif %}>{{ sort_label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
             </div>
           </div>
 
@@ -301,6 +352,7 @@
                 <th width="11%">Status</th>     <!-- reduced -->
                 <th width="23%">Base Prompt</th> <!-- increased -->
                 <th width="8%"></th>
+                <th width="10%">Validated</th>
                 <th width="8%">Acceptable</th>
                 <th width="12%">Addressed</th>
               </tr>
@@ -331,6 +383,13 @@
                      href="{{ url_for('admin_load_annotation', annotation_id=r.id) }}">
                     Load
                   </a>
+                </td>
+                <td class="acceptance-cell">
+                  {% if r._is_validated %}
+                    <span class="tag is-success is-light status-tag">Validated</span>
+                  {% else %}
+                    <span class="tag is-light status-tag">Pending</span>
+                  {% endif %}
                 </td>
                 <td class="acceptance-cell">
                   {% if r._acceptance_status == "accepted" %}
@@ -382,6 +441,7 @@
   const validatedStateCounts = validatedStateStats.map((row) => row.annotation_count);
   const dailyLabels = dailyProgress.map((row) => row.date);
   const dailyCounts = dailyProgress.map((row) => row.count);
+  const cumulativeCounts = dailyProgress.map((row) => row.cumulative);
 
   const stateColors = [
     "#4F46E5", "#0EA5E9", "#22C55E", "#F59E0B", "#EF4444",
@@ -436,31 +496,87 @@
 
   const dailyCtx = document.getElementById("dailyProgressChart");
   if (dailyCtx && dailyCounts.some((x) => x > 0)) {
+    const gradient = dailyCtx.getContext("2d").createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, "rgba(14, 165, 233, 0.75)");
+    gradient.addColorStop(1, "rgba(37, 99, 235, 0.15)");
+
     new Chart(dailyCtx, {
-      type: "line",
       data: {
         labels: dailyLabels,
         datasets: [{
-          label: "Annotations",
+          type: "bar",
+          label: "Daily annotations",
           data: dailyCounts,
-          borderColor: "#2563EB",
-          backgroundColor: "rgba(37, 99, 235, 0.12)",
-          fill: true,
-          tension: 0.25,
+          backgroundColor: gradient,
+          borderColor: "rgba(14, 116, 144, 0.95)",
+          borderWidth: 1,
+          borderRadius: 8,
+          borderSkipped: false,
+          maxBarThickness: 28,
+          yAxisID: "y",
+        }, {
+          type: "line",
+          label: "Cumulative total",
+          data: cumulativeCounts,
+          borderColor: "#16A34A",
+          backgroundColor: "rgba(22, 163, 74, 0.14)",
+          fill: false,
+          tension: 0.3,
           pointRadius: 3,
-          pointHoverRadius: 4
+          pointHoverRadius: 5,
+          pointBackgroundColor: "#16A34A",
+          pointBorderColor: "#ffffff",
+          pointBorderWidth: 2,
+          yAxisID: "y1",
         }]
       },
       options: {
         responsive: true,
         plugins: {
-          legend: { display: false }
+          legend: {
+            position: "bottom",
+            labels: {
+              usePointStyle: true,
+              boxWidth: 10,
+            }
+          },
+          tooltip: {
+            mode: "index",
+            intersect: false,
+          }
+        },
+        interaction: {
+          mode: "index",
+          intersect: false,
         },
         scales: {
           y: {
             beginAtZero: true,
+            title: {
+              display: true,
+              text: "Daily Count"
+            },
             ticks: {
               precision: 0
+            }
+          },
+          y1: {
+            beginAtZero: true,
+            position: "right",
+            grid: {
+              drawOnChartArea: false
+            },
+            title: {
+              display: true,
+              text: "Cumulative"
+            },
+            ticks: {
+              precision: 0
+            }
+          },
+          x: {
+            grid: {
+              display: false
             }
           }
         }

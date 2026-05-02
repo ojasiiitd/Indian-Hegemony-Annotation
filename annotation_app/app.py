@@ -217,6 +217,27 @@ def _has_text(value):
     return bool(str(value).strip()) if value is not None else False
 
 
+def _parse_record_datetime(record):
+    raw_ts = str(record.get("timestamp") or record.get("created_at") or "").strip()
+    if not raw_ts:
+        return None
+
+    try:
+        return datetime.fromisoformat(raw_ts.replace("Z", "+00:00"))
+    except ValueError:
+        if len(raw_ts) >= 10 and raw_ts[4] == "-" and raw_ts[7] == "-":
+            try:
+                return datetime.fromisoformat(f"{raw_ts[:10]}T00:00:00")
+            except ValueError:
+                return None
+        return None
+
+
+def _record_day(record):
+    parsed_dt = _parse_record_datetime(record)
+    return parsed_dt.date().isoformat() if parsed_dt else ""
+
+
 def _is_annotation_completed(record):
     prompts = record.get("prompts") or {}
     if not _has_text(prompts.get("base")) or not _has_text(prompts.get("identity")):
@@ -743,26 +764,19 @@ def admin():
 
     daily_annotation_count = Counter()
     for r in records:
-        raw_ts = str(r.get("timestamp") or r.get("created_at") or "").strip()
-        if not raw_ts:
-            continue
-
-        day_key = None
-        try:
-            parsed_ts = raw_ts.replace("Z", "+00:00")
-            day_key = datetime.fromisoformat(parsed_ts).date().isoformat()
-        except ValueError:
-            # Fallback for non-ISO formats that still start with YYYY-MM-DD
-            if len(raw_ts) >= 10 and raw_ts[4] == "-" and raw_ts[7] == "-":
-                day_key = raw_ts[:10]
-
+        day_key = _record_day(r)
         if day_key:
             daily_annotation_count[day_key] += 1
 
-    daily_progress = [
-        {"date": day, "count": daily_annotation_count[day]}
-        for day in sorted(daily_annotation_count.keys())
-    ]
+    running_total = 0
+    daily_progress = []
+    for day in sorted(daily_annotation_count.keys()):
+        running_total += daily_annotation_count[day]
+        daily_progress.append({
+            "date": day,
+            "count": daily_annotation_count[day],
+            "cumulative": running_total,
+        })
 
     totals = {
         "registered_annotators": len([a for a in annotators if (a.get("username") or "").strip()]),
@@ -771,43 +785,86 @@ def admin():
         "states_covered": len(all_states),
     }
 
-    query_date = (request.args.get("date") or "").strip()
     query_state = (request.args.get("state") or "").strip()
     query_annotator = (request.args.get("annotator") or "").strip()
-
-    def _record_day(record):
-        raw_ts = str(record.get("timestamp") or record.get("created_at") or "").strip()
-        if not raw_ts:
-            return ""
-        try:
-            return datetime.fromisoformat(raw_ts.replace("Z", "+00:00")).date().isoformat()
-        except ValueError:
-            if len(raw_ts) >= 10 and raw_ts[4] == "-" and raw_ts[7] == "-":
-                return raw_ts[:10]
-            return ""
+    query_validation = (request.args.get("validation") or "").strip()
+    query_sort = (request.args.get("sort") or "date_desc").strip() or "date_desc"
 
     filtered_records = []
     for r in records:
-        if query_date and _record_day(r) != query_date:
-            continue
         if query_state and (r.get("state") or "").strip() != query_state:
             continue
         if query_annotator:
             annotator_name = (r.get("annotator_name") or "").strip().lower()
             if query_annotator.lower() not in annotator_name:
                 continue
+        acceptance_status = _acceptance_status(r.get("isAccept"))
+        is_validated = acceptance_status in ("accepted", "needs_restructuring")
+        if query_validation == "validated" and not is_validated:
+            continue
+        if query_validation == "non_validated" and is_validated:
+            continue
+        parsed_timestamp = _parse_record_datetime(r)
         filtered_records.append({
             **r,
             "_is_completed": _is_annotation_completed(r),
             "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
-            "_acceptance_status": _acceptance_status(r.get("isAccept")),
+            "_acceptance_status": acceptance_status,
             "_annotator_addressed_status": _annotator_addressed_status(r.get("annotator_addressed")),
+            "_is_validated": is_validated,
+            "_parsed_timestamp": parsed_timestamp,
+            "_sort_timestamp": parsed_timestamp.timestamp() if parsed_timestamp else float("-inf"),
         })
 
-    filtered_records.sort(
-        key=lambda r: str(r.get("timestamp") or r.get("created_at") or ""),
-        reverse=True
-    )
+    sort_options = {
+        "date_desc": {
+            "label": "Newest First",
+            "key": lambda r: (
+                r.get("_sort_timestamp", float("-inf")),
+                (r.get("annotator_name") or "").strip().casefold(),
+            ),
+            "reverse": True,
+        },
+        "date_asc": {
+            "label": "Oldest First",
+            "key": lambda r: (
+                r.get("_sort_timestamp", float("-inf")),
+                (r.get("annotator_name") or "").strip().casefold(),
+            ),
+            "reverse": False,
+        },
+        "name_asc": {
+            "label": "Annotator Name (A-Z)",
+            "key": lambda r: (
+                (r.get("annotator_name") or "").strip().casefold(),
+                (r.get("state") or "").strip().casefold(),
+                -r.get("_sort_timestamp", float("-inf")),
+            ),
+            "reverse": False,
+        },
+        "state_asc": {
+            "label": "State (A-Z)",
+            "key": lambda r: (
+                (r.get("state") or "").strip().casefold(),
+                (r.get("annotator_name") or "").strip().casefold(),
+                -r.get("_sort_timestamp", float("-inf")),
+            ),
+            "reverse": False,
+        },
+        "validation_desc": {
+            "label": "Validation Status",
+            "key": lambda r: (
+                0 if r.get("_is_validated") else 1,
+                (r.get("_acceptance_status") or "").strip(),
+                -r.get("_sort_timestamp", float("-inf")),
+            ),
+            "reverse": False,
+        },
+    }
+    selected_sort = sort_options.get(query_sort, sort_options["date_desc"])
+    if query_sort not in sort_options:
+        query_sort = "date_desc"
+    filtered_records.sort(key=selected_sort["key"], reverse=selected_sort["reverse"])
 
     available_states = sorted({
         (r.get("state") or "").strip()
@@ -826,9 +883,11 @@ def admin():
         daily_progress=daily_progress,
         filtered_records=filtered_records,
         available_states=available_states,
-        query_date=query_date,
         query_state=query_state,
         query_annotator=query_annotator,
+        query_validation=query_validation,
+        query_sort=query_sort,
+        sort_options={key: option["label"] for key, option in sort_options.items()},
         totals=totals,
         data_source=data_source,
         error=error,
