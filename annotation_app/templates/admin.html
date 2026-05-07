@@ -248,16 +248,22 @@
       <div class="card-content">
         <h2 class="title is-5">Progress Visualizations</h2>
         <div class="columns is-variable is-5 is-multiline">
-          <div class="column is-6">
+          <div class="column is-4">
             <p class="has-text-weight-semibold mb-2">Total Annotations by State</p>
             <div style="max-width: 420px;">
               <canvas id="stateAnnotationsChart" height="220"></canvas>
             </div>
           </div>
-          <div class="column is-6">
-            <p class="has-text-weight-semibold mb-2">Validated Annotations by State</p>
+          <div class="column is-4">
+            <p class="has-text-weight-semibold mb-2">Total Validated Annotations by State</p>
             <div style="max-width: 420px;">
-              <canvas id="validatedStateAnnotationsChart" height="220"></canvas>
+              <canvas id="reviewedStateAnnotationsChart" height="220"></canvas>
+            </div>
+          </div>
+          <div class="column is-4">
+            <p class="has-text-weight-semibold mb-2">Approved Annotations by State</p>
+            <div style="max-width: 420px;">
+              <canvas id="approvedStateAnnotationsChart" height="220"></canvas>
             </div>
           </div>
         </div>
@@ -322,6 +328,18 @@
                 </select>
               </div>
             </div>
+          </div>
+
+          <div class="field mt-1">
+            <label class="label">Drafts</label>
+            <label class="radio mr-4">
+              <input type="radio" name="drafts" value="all" {% if query_drafts == "all" %}checked{% endif %}>
+              Show All
+            </label>
+            <label class="radio mr-4">
+              <input type="radio" name="drafts" value="hide" {% if query_drafts == "hide" %}checked{% endif %}>
+              Remove Drafts
+            </label>
           </div>
 
           <div class="field is-grouped mt-2">
@@ -432,67 +450,65 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
   const stateStats = {{ state_stats | tojson }};
-  const validatedStateStats = {{ validated_state_stats | tojson }};
+  const reviewedStateStats = {{ reviewed_state_stats | tojson }};
+  const approvedStateStats = {{ approved_state_stats | tojson }};
   const dailyProgress = {{ daily_progress | tojson }};
 
   const stateLabels = stateStats.map((row) => row.state);
   const stateCounts = stateStats.map((row) => row.annotation_count);
-  const validatedStateLabels = validatedStateStats.map((row) => row.state);
-  const validatedStateCounts = validatedStateStats.map((row) => row.annotation_count);
+  const reviewedStateLabels = reviewedStateStats.map((row) => row.state);
+  const reviewedStateCounts = reviewedStateStats.map((row) => row.annotation_count);
+  const approvedStateLabels = approvedStateStats.map((row) => row.state);
+  const approvedStateCounts = approvedStateStats.map((row) => row.annotation_count);
   const dailyLabels = dailyProgress.map((row) => row.date);
   const dailyCounts = dailyProgress.map((row) => row.count);
   const cumulativeCounts = dailyProgress.map((row) => row.cumulative);
 
-  const stateColors = [
+  const statePalette = [
     "#4F46E5", "#0EA5E9", "#22C55E", "#F59E0B", "#EF4444",
-    "#14B8A6", "#A855F7", "#84CC16", "#EAB308", "#F97316"
+    "#14B8A6", "#A855F7", "#84CC16", "#EAB308", "#F97316",
+    "#06B6D4", "#10B981", "#F43F5E", "#8B5CF6", "#F97316",
+    "#3B82F6", "#65A30D", "#D97706", "#DC2626", "#7C3AED"
   ];
+  const allChartStates = Array.from(new Set(
+    [...stateLabels, ...reviewedStateLabels, ...approvedStateLabels]
+  )).sort((a, b) => a.localeCompare(b));
+  const stateColorMap = Object.fromEntries(
+    allChartStates.map((state, index) => [state, statePalette[index % statePalette.length]])
+  );
 
-  const stateCtx = document.getElementById("stateAnnotationsChart");
-  if (stateCtx && stateCounts.some((x) => x > 0)) {
-    new Chart(stateCtx, {
-      type: "pie",
-      data: {
-        labels: stateLabels,
-        datasets: [{
-          data: stateCounts,
-          backgroundColor: stateLabels.map((_, i) => stateColors[i % stateColors.length]),
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: "bottom" }
-        }
-      }
-    });
-  } else if (stateCtx) {
-    stateCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No annotation data yet.</p>");
+  function colorsForStates(labels) {
+    return labels.map((label) => stateColorMap[label] || "#94A3B8");
   }
 
-  const validatedStateCtx = document.getElementById("validatedStateAnnotationsChart");
-  if (validatedStateCtx && validatedStateCounts.some((x) => x > 0)) {
-    new Chart(validatedStateCtx, {
-      type: "pie",
-      data: {
-        labels: validatedStateLabels,
-        datasets: [{
-          data: validatedStateCounts,
-          backgroundColor: validatedStateLabels.map((_, i) => stateColors[i % stateColors.length]),
-          borderWidth: 1
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: "bottom" }
+  function buildPieChart(canvasId, labels, counts, emptyMessage) {
+    const ctx = document.getElementById(canvasId);
+    if (ctx && counts.some((x) => x > 0)) {
+      new Chart(ctx, {
+        type: "pie",
+        data: {
+          labels,
+          datasets: [{
+            data: counts,
+            backgroundColor: colorsForStates(labels),
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { position: "bottom" }
+          }
         }
-      }
-    });
-  } else if (validatedStateCtx) {
-    validatedStateCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No validated annotations yet.</p>");
+      });
+    } else if (ctx) {
+      ctx.parentElement.insertAdjacentHTML("beforeend", `<p class='has-text-grey'>${emptyMessage}</p>`);
+    }
   }
+
+  buildPieChart("stateAnnotationsChart", stateLabels, stateCounts, "No annotation data yet.");
+  buildPieChart("reviewedStateAnnotationsChart", reviewedStateLabels, reviewedStateCounts, "No reviewed annotations yet.");
+  buildPieChart("approvedStateAnnotationsChart", approvedStateLabels, approvedStateCounts, "No approved annotations yet.");
 
   const dailyCtx = document.getElementById("dailyProgressChart");
   if (dailyCtx && dailyCounts.some((x) => x > 0)) {

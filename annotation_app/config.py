@@ -1,7 +1,10 @@
 from werkzeug.security import generate_password_hash
 import json
+from pathlib import Path
 
-DATA_FILE = "annotation_app/static/annotations.jsonl"
+BASE_DIR = Path(__file__).resolve().parent
+
+DATA_FILE = BASE_DIR / "annotation_app" / "static" / "annotations.jsonl"
 
 REGION_STATE_MAP = {
     "East": ["West Bengal", "Arunachal Pradesh", "Assam", "Jharkhand", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Sikkim", "Tripura"],
@@ -41,9 +44,10 @@ HEGEMONY_AXES = [
 
 SHEET_NAME = "json-to-sheets-hegemony"
 
-GOOGLE_CREDS_PATH = "annotation_app/accounts/google_creds.json"
+GOOGLE_CREDS_PATH = BASE_DIR / "accounts" / "google_creds.json"
 
-API_KEYS_PATH = "annotation_app/accounts/apikeys.json"
+API_KEYS_PATH = BASE_DIR / "accounts" / "apikeys.json"
+
 with open(API_KEYS_PATH, "r") as f:
 	KEYS = json.load(f)
 

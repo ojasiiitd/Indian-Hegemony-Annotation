@@ -732,15 +732,18 @@ def admin():
     )
 
     state_annotation_count = Counter()
-    validated_state_annotation_count = Counter()
+    reviewed_state_annotation_count = Counter()
+    approved_state_annotation_count = Counter()
     state_active_annotators = defaultdict(set)
     for r in records:
         state = (r.get("state") or "Unknown").strip() or "Unknown"
         username = (r.get("annotator_name") or "").strip()
         state_annotation_count[state] += 1
         acceptance_status = _acceptance_status(r.get("isAccept"))
+        if acceptance_status != "pending":
+            reviewed_state_annotation_count[state] += 1
         if acceptance_status in ("accepted", "needs_restructuring"):
-            validated_state_annotation_count[state] += 1
+            approved_state_annotation_count[state] += 1
         if username:
             state_active_annotators[state].add(username)
 
@@ -756,11 +759,17 @@ def admin():
 
     state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
 
-    validated_state_stats = [
+    reviewed_state_stats = [
         {"state": state, "annotation_count": count}
-        for state, count in validated_state_annotation_count.items()
+        for state, count in reviewed_state_annotation_count.items()
     ]
-    validated_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+    reviewed_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    approved_state_stats = [
+        {"state": state, "annotation_count": count}
+        for state, count in approved_state_annotation_count.items()
+    ]
+    approved_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
 
     daily_annotation_count = Counter()
     for r in records:
@@ -788,6 +797,7 @@ def admin():
     query_state = (request.args.get("state") or "").strip()
     query_annotator = (request.args.get("annotator") or "").strip()
     query_validation = (request.args.get("validation") or "").strip()
+    query_drafts = (request.args.get("drafts") or "hide").strip() or "hide"
     query_sort = (request.args.get("sort") or "date_desc").strip() or "date_desc"
 
     filtered_records = []
@@ -798,6 +808,9 @@ def admin():
             annotator_name = (r.get("annotator_name") or "").strip().lower()
             if query_annotator.lower() not in annotator_name:
                 continue
+        is_completed = _is_annotation_completed(r)
+        if query_drafts == "hide" and not is_completed:
+            continue
         acceptance_status = _acceptance_status(r.get("isAccept"))
         is_validated = acceptance_status in ("accepted", "needs_restructuring")
         if query_validation == "validated" and not is_validated:
@@ -807,7 +820,7 @@ def admin():
         parsed_timestamp = _parse_record_datetime(r)
         filtered_records.append({
             **r,
-            "_is_completed": _is_annotation_completed(r),
+            "_is_completed": is_completed,
             "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
             "_acceptance_status": acceptance_status,
             "_annotator_addressed_status": _annotator_addressed_status(r.get("annotator_addressed")),
@@ -879,13 +892,15 @@ def admin():
         records=records,
         annotator_stats=annotator_stats,
         state_stats=state_stats,
-        validated_state_stats=validated_state_stats,
+        reviewed_state_stats=reviewed_state_stats,
+        approved_state_stats=approved_state_stats,
         daily_progress=daily_progress,
         filtered_records=filtered_records,
         available_states=available_states,
         query_state=query_state,
         query_annotator=query_annotator,
         query_validation=query_validation,
+        query_drafts=query_drafts,
         query_sort=query_sort,
         sort_options={key: option["label"] for key, option in sort_options.items()},
         totals=totals,
