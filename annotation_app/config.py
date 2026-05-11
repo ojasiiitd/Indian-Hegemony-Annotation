@@ -4,7 +4,7 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
 
-DATA_FILE = BASE_DIR / "annotation_app" / "static" / "annotations.jsonl"
+DATA_FILE = BASE_DIR / "static" / "annotations.jsonl"
 
 REGION_STATE_MAP = {
     "East": ["West Bengal", "Arunachal Pradesh", "Assam", "Jharkhand", "Manipur", "Meghalaya", "Mizoram", "Nagaland", "Odisha", "Sikkim", "Tripura"],

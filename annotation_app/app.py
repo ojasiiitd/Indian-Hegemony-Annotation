@@ -812,7 +812,7 @@ def admin():
         if query_drafts == "hide" and not is_completed:
             continue
         acceptance_status = _acceptance_status(r.get("isAccept"))
-        is_validated = acceptance_status in ("accepted", "needs_restructuring")
+        is_validated = acceptance_status != "pending"
         if query_validation == "validated" and not is_validated:
             continue
         if query_validation == "non_validated" and is_validated:
