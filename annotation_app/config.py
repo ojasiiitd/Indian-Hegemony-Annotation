@@ -14,6 +14,7 @@ REGION_STATE_MAP = {
     "West": ["Maharashtra", "Gujarat", "Goa"]
 }
 
+# Update for pythonanywhere
 # Update this list whenever new annotators are onboarded and should be highlighted in admin.
 ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Arnab6203",
@@ -31,6 +32,7 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Veera Hymavathi Sirisipalli",
 	"Sylesh",
 	"Subham48",
+	"Lila Ghimire",
 ]
 
 HEGEMONY_AXES = [

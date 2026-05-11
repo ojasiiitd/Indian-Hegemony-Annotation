@@ -132,6 +132,36 @@ function toggleStickyPrompts() {
   toggleCollapsiblePanel("sticky_prompt_body", "sticky_prompt_toggle_icon");
 }
 
+function syncHegemonyReasonWithRadio(textarea) {
+  if (!textarea) return;
+
+  const reasonText = textarea.value.trim();
+  if (!reasonText) return;
+
+  const radioGroupName = textarea.name.replace(/_impact$/, "_hegemony");
+  const yesRadio = document.querySelector(
+    `input[type="radio"][name="${radioGroupName}"][value="yes"]`
+  );
+
+  if (yesRadio) {
+    yesRadio.checked = true;
+  }
+}
+
+function attachHegemonyReasonAutoYes() {
+  document
+    .querySelectorAll("textarea[data-hegemony-impact-input='true']")
+    .forEach((textarea) => {
+      textarea.addEventListener("input", () => {
+        syncHegemonyReasonWithRadio(textarea);
+      });
+
+      textarea.addEventListener("change", () => {
+        syncHegemonyReasonWithRadio(textarea);
+      });
+    });
+}
+
 function toggleStickyReview() {
   const body = document.getElementById("sticky_review_body");
   const icon = document.getElementById("sticky_review_toggle_icon");
@@ -312,6 +342,7 @@ function prevStep() {
 
 // Optional: start at step 1 explicitly
 document.addEventListener("DOMContentLoaded", () => {
+  attachHegemonyReasonAutoYes();
   showStep(1);
 });
 </script>

@@ -10,6 +10,7 @@
         <input type="radio"
                name="{{ model }}_{{ kind }}_{{ axis }}_hegemony"
                value="yes"
+               data-hegemony-yes-radio="true"
                {% if draft and draft.outputs[model][kind].hegemony[axis].present == "yes" %}checked{% endif %}>
         Yes
       </label>
@@ -28,6 +29,7 @@
   <label class="label mt-2">{{ axis|capitalize }} Reason</label>
   <textarea class="textarea"
             name="{{ model }}_{{ kind }}_{{ axis }}_impact"
+            data-hegemony-impact-input="true"
             rows="2"
             placeholder="Fill reason only if 'Yes'">{{ draft.outputs[model][kind].hegemony[axis].impact if draft }}</textarea>
 
