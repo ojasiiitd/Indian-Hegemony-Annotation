@@ -32,15 +32,13 @@ app.register_blueprint(auth_bp)
 # If set, /examples will show only these annotation IDs (in this exact order).
 # Leave empty to use automatic latest-complete sampling.
 EXAMPLE_ANNOTATION_IDS = [
-    "bf755666-b9c9-409d-a3a0-20f25f6d85aa",
+    "582abe5e-c80a-4306-9086-00ebf7b660d4",
+    "69782176-23f7-488d-a10a-670f30f26622",
+    "0a277487-7037-49f9-96b4-ffc7ae804f32",
+    "d1cddafd-aed5-4a8f-981c-37264dbd0bca",
     "4d17f079-083a-40a6-bdee-010af3943430",
-    "73db6658-6eea-4a93-bd21-cc2c3c3c357d",
     "5a83933e-74fb-422b-ab62-ec1c4e0bb8c0",
-
-
     "51147a23-93a1-4f92-9629-6e7e91ed497e",
-    "c938d8c6-e82c-481e-afd5-0beac5ef935b",
-    "adc1750a-538e-4c0a-907d-dc67c5baba08"
 ]
 
 
@@ -60,6 +58,15 @@ def validate_session():
         _ = session.get("user")
     except Exception:
         session.clear()
+
+
+@app.context_processor
+def inject_template_flags():
+    user = session.get("user") or {}
+    username = user.get("username")
+    return {
+        "show_timesheet_link": _normalize_username(username) in ONBOARDED_ANNOTATOR_SET
+    }
 
 def login_required(f):
     @wraps(f)
@@ -924,12 +931,9 @@ def admin_load_annotation(annotation_id):
             **record,
             "expert_reviews": (request.form.get("expert_reviews") or "").strip(),
             "isAccept": selected_acceptance,
-            "annotator_addressed": (
-                record.get("annotator_addressed", "")
-                if selected_acceptance == "needs_restructuring"
-                and _acceptance_status(record.get("isAccept")) == "needs_restructuring"
-                else ""
-            ),
+            # A fresh restructure request should require the annotator to
+            # acknowledge/address the latest reviewer feedback again.
+            "annotator_addressed": "",
         }
 
         try:

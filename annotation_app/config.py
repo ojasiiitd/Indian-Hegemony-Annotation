@@ -17,6 +17,7 @@ REGION_STATE_MAP = {
 # Update for pythonanywhere
 # Update this list whenever new annotators are onboarded and should be highlighted in admin.
 ONBOARDED_ANNOTATOR_USERNAMES = [
+	"admin",
 	"Arnab6203",
 	"nishtharajput",
 	"Manasikelkar26",
