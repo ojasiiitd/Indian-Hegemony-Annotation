@@ -68,7 +68,7 @@
               <div class="card">
                 <div class="card-content">
                   <h3 class="title is-6 mb-3">{{ kind|capitalize }} Output</h3>
-                  <pre class="wrapped-pre">{{ record.outputs[model_key][kind].text }}</pre>
+                  <div class="markdown-output is-compact" data-markdown-static>{{- record.outputs[model_key][kind].text -}}</div>
 
                   <div class="axis-table-wrap">
                     <h4 class="title is-7 mb-2">Annotated Hegemony Axes</h4>

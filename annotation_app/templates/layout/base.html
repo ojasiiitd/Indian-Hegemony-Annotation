@@ -30,6 +30,7 @@
     body.login-page {
         background: linear-gradient(135deg, #dbe4ff, #f8f9ff);
     }
+
     .wrapped-pre {
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -39,6 +40,74 @@
     padding: 1rem;
     border-radius: 8px;
     border: 1px solid #e6e8f0;
+    }
+
+    .markdown-output {
+        background: #f8f9ff;
+        border: 1px solid #e6e8f0;
+        border-radius: 10px;
+        padding: 0.9rem 1rem;
+        min-height: 8rem;
+        color: #1f4ed8;
+        overflow-wrap: anywhere;
+        white-space: normal;
+    }
+
+    .markdown-output.is-compact {
+        min-height: 0;
+    }
+
+    .textarea.markdown-output {
+        min-height: 27rem;
+        height: auto;
+        overflow-y: auto;
+    }
+
+    .markdown-output.is-loading {
+        color: var(--ink-soft);
+        font-style: italic;
+    }
+
+    .markdown-output > :first-child {
+        margin-top: 0;
+    }
+
+    .markdown-output > :last-child {
+        margin-bottom: 0;
+    }
+
+    .markdown-output pre {
+        background: #ffffff;
+        border: 1px solid #d7ddef;
+        border-radius: 8px;
+        padding: 0.75rem 0.9rem;
+        overflow-x: auto;
+        color: #1f4ed8;
+    }
+
+    .markdown-output code {
+        background: #eef2ff;
+        padding: 0.08rem 0.3rem;
+        border-radius: 6px;
+        color: #3b5bdb;
+    }
+
+    .markdown-output pre code {
+        background: transparent;
+        padding: 0;
+        color: inherit;
+    }
+
+    .markdown-output blockquote {
+        margin: 0.85rem 0;
+        padding-left: 0.9rem;
+        border-left: 3px solid var(--accent);
+        color: var(--ink-soft);
+    }
+
+    .markdown-output ul,
+    .markdown-output ol {
+        margin-left: 1.2rem;
     }
     body {
         background:
@@ -435,6 +504,8 @@
 
     </style>
   {% endblock %}
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 </head>
 
 <body class="{% if request.endpoint == 'auth.login' %}login-page{% endif %}">
@@ -651,6 +722,38 @@
           body.style.height = "auto";
         }
       }
+    });
+
+    function renderMarkdownElement(element, rawText) {
+      if (!element) return;
+
+      const sourceText = String(rawText == null ? "" : rawText).trim();
+      if (!sourceText) {
+        element.innerHTML = "";
+        return;
+      }
+
+      if (window.marked && window.DOMPurify) {
+        const rendered = window.marked.parse(sourceText, {
+          breaks: true,
+          gfm: true
+        });
+        element.innerHTML = window.DOMPurify.sanitize(rendered);
+      } else {
+        element.textContent = sourceText;
+      }
+    }
+
+    function renderStaticMarkdownBlocks() {
+      document.querySelectorAll("[data-markdown-static]").forEach((element) => {
+        renderMarkdownElement(element, element.textContent);
+      });
+    }
+
+    window.renderMarkdownElement = renderMarkdownElement;
+
+    document.addEventListener("DOMContentLoaded", function () {
+      renderStaticMarkdownBlocks();
     });
   </script>
 

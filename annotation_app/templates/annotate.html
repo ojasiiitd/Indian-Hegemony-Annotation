@@ -273,14 +273,18 @@
                           Generate
                         </button>
 
-                        <textarea class="textarea"
+                        <textarea
                                   id="{{ m.js }}_llm_output_{{ kind }}"
                                   name="{{ m.key }}_{{ kind }}_output"
-                                  rows="20"
                                   readonly
-                                  style="color: #1f4ed8;">
+                                  aria-hidden="true"
+                                  style="display:none;">
 {{ draft.outputs[m.key][kind].text if draft }}
                         </textarea>
+
+                        <div id="{{ m.js }}_llm_output_{{ kind }}_preview"
+                             class="textarea markdown-output"
+                             data-output-preview-for="{{ m.js }}_llm_output_{{ kind }}"></div>
 
                         <div class="notification is-light mt-2 p-3">
                           <label class="checkbox">

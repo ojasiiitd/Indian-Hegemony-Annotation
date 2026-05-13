@@ -41,6 +41,7 @@
     }
 
     updateState();
+    renderAllOutputPreviews();
   });
 </script>
 
@@ -69,6 +70,9 @@ async function generateOutput(model, kind) {
   const outputBox = document.getElementById(
     `${model}_llm_output_${kind}`
   );
+  const previewBox = document.getElementById(
+    `${model}_llm_output_${kind}_preview`
+  );
 
   if (!outputBox) {
     alert("Output box not found in DOM.");
@@ -76,6 +80,10 @@ async function generateOutput(model, kind) {
   }
 
   outputBox.value = "Generating…";
+  if (previewBox) {
+    previewBox.classList.add("is-loading");
+    previewBox.textContent = "Generating...";
+  }
 
   // 3. Call backend
   try {
@@ -93,10 +101,35 @@ async function generateOutput(model, kind) {
       outputBox.value = data.text;
     }
 
+    renderOutputPreview(outputBox.id);
+
   } catch (err) {
     console.error(err);
     outputBox.value = "Request failed.";
+    renderOutputPreview(outputBox.id);
   }
+}
+
+function renderOutputPreview(textareaId) {
+  const source = document.getElementById(textareaId);
+  const preview = document.querySelector(`[data-output-preview-for="${textareaId}"]`);
+  if (!source || !preview) return;
+
+  preview.classList.toggle("is-loading", source.value.trim() === "Generating…");
+  if (window.renderMarkdownElement) {
+    window.renderMarkdownElement(preview, source.value);
+  } else {
+    preview.textContent = source.value;
+  }
+}
+
+function renderAllOutputPreviews() {
+  document.querySelectorAll("[data-output-preview-for]").forEach((preview) => {
+    const textareaId = preview.getAttribute("data-output-preview-for");
+    if (textareaId) {
+      renderOutputPreview(textareaId);
+    }
+  });
 }
 
 function autofillIdentityPrompt() {

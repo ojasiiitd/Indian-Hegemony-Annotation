@@ -83,7 +83,7 @@
                 <td><strong>{{ kind|capitalize }}</strong></td>
 
                 <td>
-                  <pre class="wrapped-pre">{{ model_data[kind].text }}</pre>
+                  <div class="markdown-output is-compact" data-markdown-static>{{- model_data[kind].text -}}</div>
                 </td>
 
                 <td>
