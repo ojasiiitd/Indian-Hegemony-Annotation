@@ -995,6 +995,29 @@ def export_iaa_reviews_csv():
     )
 
 
+@app.route("/admin/annotations.csv")
+@admin_required
+def export_annotations_csv():
+    try:
+        records = load_records_from_sheet()
+    except Exception as e:
+        abort(500, description=f"Could not export annotations: {e}")
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(HEADERS)
+    for record in records:
+        writer.writerow(json_to_row(record))
+
+    csv_data = output.getvalue()
+    output.close()
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=annotations_sheet1.csv"},
+    )
+
+
 @app.route("/admin/load/<annotation_id>", methods=["GET", "POST"])
 @admin_required
 def admin_load_annotation(annotation_id):
