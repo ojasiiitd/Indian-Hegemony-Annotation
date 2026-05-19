@@ -9,7 +9,11 @@
       <div class="card-content">
         <h1 class="title">IAA Annotation Review Queue</h1>
         <p class="subtitle mb-0">
-          Review annotations from your own state (excluding your own submissions).
+          {% if session.get("user") and session["user"]["role"] == "admin" %}
+            Review approved annotations across all states (excluding your own submissions).
+          {% else %}
+            Review approved annotations from your own state (excluding your own submissions).
+          {% endif %}
         </p>
       </div>
     </div>

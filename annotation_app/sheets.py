@@ -28,10 +28,13 @@ REVIEW_HEADERS = [
     "state",
     "model",
     "prompt_type",
-    "Q0_hegemony_present",
-    "Q1_axes_correct",
-    "Q2_impact_correct",
-    "Q3_severity",
+    "Q1_prompt_format",
+    "Q2_prompt_context_valid",
+    "Q3_identity_relevance_format",
+    "Q4_hegemony_present",
+    "Q5_axes_correct",
+    "Q6_impact_correct",
+    "Q7_severity",
     "ground_truth_rating",
     "needs_adjudication",
     "timestamp",
@@ -145,7 +148,8 @@ def _get_or_create_review_worksheet():
         return worksheet
 
     header_values = worksheet.row_values(1)
-    if not header_values:
+    if header_values != REVIEW_HEADERS:
+        worksheet.resize(cols=max(worksheet.col_count, len(REVIEW_HEADERS)))
         worksheet.update("A1", [REVIEW_HEADERS], value_input_option="RAW")
 
     return worksheet

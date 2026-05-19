@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, jsonify, url_for, abort
+from flask import Flask, render_template, request, redirect, jsonify, url_for, abort, Response
 from storage import *
 from sheets import *
 from flask import session
@@ -24,10 +24,23 @@ from prompt_similarity import (
     remove_prompt_embedding,
 )
 from notes_store import list_notes, save_note, delete_note
+from iaa_store import (
+    IAA_REVIEW_COLUMNS,
+    count_completed_iaa_reviews_by_annotation,
+    fetch_iaa_review,
+    initialize_iaa_storage,
+    list_completed_iaa_annotation_ids_for_reviewer,
+    list_iaa_reviews_for_export,
+    save_iaa_review,
+)
+import csv
+import io
+import random
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
 app.register_blueprint(auth_bp)
+initialize_iaa_storage()
 
 # If set, /examples will show only these annotation IDs (in this exact order).
 # Leave empty to use automatic latest-complete sampling.
@@ -136,7 +149,7 @@ def _sync_local_record_fields(record_id, field_updates):
 
 
 def _is_checked_value(value):
-    return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted", "Needs Restructuring", "needs restructuring"}
+    return str(value or "").strip().casefold() in {"yes", "true", "1", "validated", "accepted"}
 
 
 def _is_restructure_value(value):
@@ -177,6 +190,89 @@ def _acceptance_status(value):
     if _is_restructure_value(clean_value):
         return "needs_restructuring"
     return "rejected"
+
+
+def _is_iaa_approved_record(record):
+    clean_value = str((record or {}).get("isAccept") or "").strip().casefold().replace(" ", "_")
+    return clean_value in {"yes", "accepted", "approved", "true", "1"}
+
+
+def _parse_iaa_score(form, field_name, default=0):
+    raw_value = str(form.get(field_name, default)).strip()
+    if raw_value in {"0", "1", "2", "3", "4", "5"}:
+        return int(raw_value)
+    return int(default)
+
+
+def _optional_text(form, field_name):
+    value = str(form.get(field_name, "") or "").strip()
+    return value or None
+
+
+def _parse_optional_iaa_score(form, field_name):
+    raw_value = str(form.get(field_name, "") or "").strip()
+    if raw_value in {"0", "1", "2", "3", "4", "5"}:
+        return int(raw_value)
+    return None
+
+
+def _iaa_review_to_form_values(review):
+    if not review:
+        return {}
+
+    field_map = {
+        "prompt_q0": "prompt_q1_clarity_format",
+        "prompt_q1": "prompt_q2_cultural_context",
+        "prompt_q2": "prompt_q3_identity_relevance",
+        "ground_truth_rating": "groundtruth_q1_corrective_quality",
+        "optional_comment": "optional_comment",
+        "reviewer_confidence": "reviewer_confidence",
+    }
+
+    for model in ["gemini", "gpt", "llama", "deepseek"]:
+        for prompt_type in ["base", "identity"]:
+            prefix = f"{model}_{prompt_type}"
+            db_prefix = f"{model}_{prompt_type}"
+            field_map[f"{prefix}_q2"] = f"{db_prefix}_output_q1_hegemony_presence"
+            field_map[f"{prefix}_q3"] = f"{db_prefix}_output_q2_axes_match"
+            field_map[f"{prefix}_q4"] = f"{db_prefix}_output_q3_reasoning_quality"
+            field_map[f"{prefix}_q5"] = f"{db_prefix}_output_q4_hegemony_severity"
+
+    form_values = {}
+    for form_name, db_name in field_map.items():
+        value = review.get(db_name)
+        form_values[form_name] = "" if value is None else str(value)
+    return form_values
+
+
+def _build_iaa_review_payload(form, user, record):
+    payload = {
+        "annotation_id": str(record.get("id") or "").strip(),
+        "reviewer_name": str(user.get("username") or "").strip(),
+        "reviewer_state": str(user.get("state") or "").strip(),
+        "annotation_creator": str(record.get("annotator_name") or "").strip(),
+        "review_timestamp": datetime.utcnow().isoformat(),
+        "editable": 0,
+        "completed": 1,
+        "prompt_q1_clarity_format": _parse_iaa_score(form, "prompt_q0"),
+        "prompt_q2_cultural_context": _parse_iaa_score(form, "prompt_q1"),
+        "prompt_q3_identity_relevance": _parse_iaa_score(form, "prompt_q2"),
+        "groundtruth_q1_corrective_quality": _parse_iaa_score(form, "ground_truth_rating"),
+        "optional_comment": _optional_text(form, "optional_comment"),
+        "reviewer_confidence": _parse_optional_iaa_score(form, "reviewer_confidence"),
+        "admin_notes": None,
+    }
+
+    for model in ["gemini", "gpt", "llama", "deepseek"]:
+        for prompt_type in ["base", "identity"]:
+            prefix = f"{model}_{prompt_type}"
+            db_prefix = f"{model}_{prompt_type}"
+            payload[f"{db_prefix}_output_q1_hegemony_presence"] = _parse_iaa_score(form, f"{prefix}_q2")
+            payload[f"{db_prefix}_output_q2_axes_match"] = _parse_iaa_score(form, f"{prefix}_q3")
+            payload[f"{db_prefix}_output_q3_reasoning_quality"] = _parse_iaa_score(form, f"{prefix}_q4")
+            payload[f"{db_prefix}_output_q4_hegemony_severity"] = _parse_iaa_score(form, f"{prefix}_q5")
+
+    return payload
 
 
 def _persist_annotation_record(record, editing_id=None):
@@ -408,48 +504,50 @@ def check_prompt_similarity():
 @login_required
 def prompt_review():
     user = session["user"]
+    page_info = (request.args.get("info") or "").strip()
 
-    if user.get("role") != "annotator":
+    if user.get("role") not in {"annotator", "admin"}:
         return render_template(
             "review_list.html",
             records=[],
             review_counts={},
             clustered_records=[],
-            info="IAA review is available only for annotators."
+            info="IAA review is available only for annotators and admins."
         )
 
     try:
         records = load_records_from_sheet()
-        reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
-        review_counts = get_completed_review_counts_by_annotation(rows_per_reviewer=9)
+        reviewed_ids = list_completed_iaa_annotation_ids_for_reviewer(user["username"])
+        review_counts = count_completed_iaa_reviews_by_annotation()
     except Exception as e:
         return render_template(
             "review_list.html",
             records=[],
             review_counts={},
             clustered_records=[],
-            error=f"Could not load review queue from Google Sheets: {e}"
+            error=f"Could not load IAA review queue: {e}"
         )
 
-    reviewable = [
-        r for r in records
-        if r.get("state") == user.get("state")
-        and r.get("region") == user.get("region")
-        and r.get("annotator_name") != user.get("username")
-        and r.get("id") not in reviewed_ids
-    ]
+    if user.get("role") == "admin":
+        reviewable = [
+            r for r in records
+            if _is_iaa_approved_record(r)
+            and r.get("annotator_name") != user.get("username")
+            and r.get("id") not in reviewed_ids
+        ]
+    else:
+        reviewable = [
+            r for r in records
+            if _is_iaa_approved_record(r)
+            and r.get("state") == user.get("state")
+            and r.get("annotator_name") != user.get("username")
+            and r.get("id") not in reviewed_ids
+        ]
 
-    reviewable_sorted = sorted(
-        reviewable,
-        key=lambda r: (
-            r.get("region", ""),
-            r.get("state", ""),
-            r.get("id", "")
-        )
-    )
+    random.shuffle(reviewable)
 
     clustered_map = {}
-    for r in reviewable_sorted:
+    for r in reviewable:
         key = (r.get("region", "Unknown"), r.get("state", "Unknown"))
         clustered_map.setdefault(key, []).append(r)
 
@@ -466,7 +564,8 @@ def prompt_review():
         "review_list.html",
         records=reviewable,
         review_counts=review_counts,
-        clustered_records=clustered_records
+        clustered_records=clustered_records,
+        info=page_info,
     )
 
 
@@ -475,7 +574,7 @@ def prompt_review():
 def review_annotation(annotation_id):
     user = session["user"]
 
-    if user.get("role") != "annotator":
+    if user.get("role") not in {"annotator", "admin"}:
         abort(403)
 
     records = load_records_from_sheet()
@@ -484,16 +583,21 @@ def review_annotation(annotation_id):
     if not record:
         abort(404)
 
-    if (
+    if not _is_iaa_approved_record(record):
+        return redirect(url_for("prompt_review", info="Only approved annotations are eligible for IAA review."))
+
+    if user.get("role") != "admin" and (
         record.get("state") != user.get("state")
-        or record.get("region") != user.get("region")
         or record.get("annotator_name") == user.get("username")
     ):
         abort(403)
 
-    reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
-    if annotation_id in reviewed_ids:
-        return redirect(url_for("prompt_review"))
+    if user.get("role") == "admin" and record.get("annotator_name") == user.get("username"):
+        abort(403)
+
+    existing_review = fetch_iaa_review(annotation_id, user["username"])
+    if existing_review and existing_review.get("completed") and not existing_review.get("editable"):
+        return redirect(url_for("prompt_review", info="You have already submitted an IAA review for this annotation."))
 
     models = [
         ("gemini", "Model 1"),
@@ -505,55 +609,9 @@ def review_annotation(annotation_id):
     return render_template(
         "review_annotation.html",
         record=record,
-        models=models
+        models=models,
+        existing_review=_iaa_review_to_form_values(existing_review),
     )
-
-
-def _build_review_rows(form, user):
-    annotation_id = form.get("annotation_id", "").strip()
-    timestamp = datetime.utcnow().isoformat()
-    needs_adjudication = form.get("needs_adjudication", "no")
-    ground_truth_rating = form.get("ground_truth_rating", "unsure")
-
-    rows = []
-    for model in ["gemini", "gpt", "llama", "deepseek"]:
-        for prompt_type in ["base", "identity"]:
-            prefix = f"{model}_{prompt_type}"
-            rows.append([
-                str(uuid.uuid4()),
-                annotation_id,
-                user["username"],
-                user.get("region", ""),
-                user.get("state", ""),
-                model,
-                prompt_type,
-                form.get(f"{prefix}_q0", "unsure"),
-                form.get(f"{prefix}_q1", "unsure"),
-                form.get(f"{prefix}_q2", "unsure"),
-                form.get(f"{prefix}_q3", "medium"),
-                "",
-                needs_adjudication,
-                timestamp,
-            ])
-
-    rows.append([
-        str(uuid.uuid4()),
-        annotation_id,
-        user["username"],
-        user.get("region", ""),
-        user.get("state", ""),
-        "ground_truth",
-        "ground_truth",
-        "",
-        "",
-        "",
-        "",
-        ground_truth_rating,
-        needs_adjudication,
-        timestamp,
-    ])
-
-    return rows
 
 
 @app.route("/submit_review", methods=["POST"])
@@ -561,7 +619,7 @@ def _build_review_rows(form, user):
 def submit_review():
     user = session["user"]
 
-    if user.get("role") != "annotator":
+    if user.get("role") not in {"annotator", "admin"}:
         abort(403)
 
     annotation_id = request.form.get("annotation_id", "").strip()
@@ -574,21 +632,24 @@ def submit_review():
     if not record:
         abort(404)
 
-    if (
+    if not _is_iaa_approved_record(record):
+        return redirect(url_for("prompt_review", info="Only approved annotations are eligible for IAA review."))
+
+    if user.get("role") != "admin" and (
         record.get("state") != user.get("state")
-        or record.get("region") != user.get("region")
         or record.get("annotator_name") == user.get("username")
     ):
         abort(403)
 
-    reviewed_ids = get_reviewed_annotation_ids_by_user(user["username"])
-    if annotation_id in reviewed_ids:
-        return redirect(url_for("prompt_review"))
+    if user.get("role") == "admin" and record.get("annotator_name") == user.get("username"):
+        abort(403)
 
-    review_rows = _build_review_rows(request.form, user)
-    append_review_rows(review_rows)
+    try:
+        save_iaa_review(_build_iaa_review_payload(request.form, user, record))
+    except PermissionError:
+        return redirect(url_for("prompt_review", info="This IAA review is locked and can no longer be edited."))
 
-    return redirect(url_for("prompt_review"))
+    return redirect(url_for("prompt_review", info="IAA review submitted."))
 
 
 @app.route("/freshannotate")
@@ -916,6 +977,24 @@ def admin():
     )
 
 
+@app.route("/admin/iaa-reviews.csv")
+@admin_required
+def export_iaa_reviews_csv():
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=["review_id"] + list(IAA_REVIEW_COLUMNS))
+    writer.writeheader()
+    for row in list_iaa_reviews_for_export():
+        writer.writerow(row)
+
+    csv_data = output.getvalue()
+    output.close()
+    return Response(
+        csv_data,
+        mimetype="text/csv",
+        headers={"Content-Disposition": "attachment; filename=iaa_reviews.csv"},
+    )
+
+
 @app.route("/admin/load/<annotation_id>", methods=["GET", "POST"])
 @admin_required
 def admin_load_annotation(annotation_id):
@@ -1055,7 +1134,7 @@ def load_annotation():
     user = session["user"]["username"]
     try:
         records = load_records_from_sheet()
-        review_counts = get_completed_review_counts_by_annotation(rows_per_reviewer=9)
+        review_counts = count_completed_iaa_reviews_by_annotation()
         print("REVIEW COUNTS" , review_counts)
     except Exception as e:
         return render_template(

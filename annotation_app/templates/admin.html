@@ -200,10 +200,17 @@
 
     <div class="card mb-5">
       <div class="card-content">
-        <h1 class="title">Admin – Manage Annotations</h1>
-        <p class="subtitle mb-0">
-          Admin overview, annotator statistics, and record management.
-        </p>
+        <div class="is-flex is-justify-content-space-between is-align-items-center is-flex-wrap-wrap" style="gap: 0.75rem;">
+          <div>
+            <h1 class="title mb-1">Admin – Manage Annotations</h1>
+            <p class="subtitle mb-0">
+              Admin overview, annotator statistics, and record management.
+            </p>
+          </div>
+          <a class="button is-link is-light" href="{{ url_for('export_iaa_reviews_csv') }}">
+            Export IAA CSV
+          </a>
+        </div>
       </div>
     </div>
 
