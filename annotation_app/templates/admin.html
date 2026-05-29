@@ -190,6 +190,49 @@
     font-size: 0.86rem;
     font-weight: 600;
   }
+
+  .admin-stats-placeholder {
+    border: 1px dashed #c8d5ef;
+    border-radius: 14px;
+    background: #fbfcff;
+    padding: 1.1rem 1.15rem;
+  }
+
+  .admin-dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .admin-dashboard-header-copy {
+    flex: 1 1 340px;
+    min-width: 0;
+  }
+
+  .admin-dashboard-header-copy .subtitle {
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  .admin-dashboard-header-actions {
+    flex: 0 0 auto;
+  }
+
+  .pagination-shell {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+
+  .pagination-meta {
+    color: #667085;
+    font-size: 0.9rem;
+  }
 </style>
 {% endblock %}
 
@@ -222,71 +265,22 @@
 
     <div class="card mb-5">
       <div class="card-content">
-        <h2 class="title is-5">Summary</h2>
-        <p class="mb-3"><strong>Data Source:</strong> {{ data_source }}</p>
-        <div class="columns is-multiline">
-          <div class="column is-3">
-            <div class="box has-text-centered">
-              <p class="heading">Registered Annotators</p>
-              <p class="title is-4">{{ totals.registered_annotators }}</p>
-            </div>
+        <div class="admin-dashboard-header mb-3">
+          <div class="admin-dashboard-header-copy">
+            <h2 class="title is-5 mb-1">Dashboard Stats</h2>
           </div>
-          <div class="column is-3">
-            <div class="box has-text-centered">
-              <p class="heading">Active Annotators</p>
-              <p class="title is-4">{{ totals.active_annotators }}</p>
-            </div>
-          </div>
-          <div class="column is-3">
-            <div class="box has-text-centered">
-              <p class="heading">Total Annotations</p>
-              <p class="title is-4">{{ totals.total_annotations }}</p>
-            </div>
-          </div>
-          <div class="column is-3">
-            <div class="box has-text-centered">
-              <p class="heading">States Covered</p>
-              <p class="title is-4">{{ totals.states_covered }}</p>
-            </div>
+          <div class="admin-dashboard-header-actions">
+            <button id="loadDashboardStatsBtn"
+                    class="button is-info is-light"
+                    type="button"
+                    data-url="{{ url_for('admin_dashboard_stats') }}">
+              Load Dashboard Stats
+            </button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <div class="card mb-5">
-      <div class="card-content">
-        <h2 class="title is-5">Progress Visualizations</h2>
-        <div class="columns is-variable is-5 is-multiline">
-          <div class="column is-4">
-            <p class="has-text-weight-semibold mb-2">Total Annotations by State</p>
-            <div style="max-width: 420px;">
-              <canvas id="stateAnnotationsChart" height="220"></canvas>
-            </div>
-          </div>
-          <div class="column is-4">
-            <p class="has-text-weight-semibold mb-2">Total Validated Annotations by State</p>
-            <div style="max-width: 420px;">
-              <canvas id="reviewedStateAnnotationsChart" height="220"></canvas>
-            </div>
-          </div>
-          <div class="column is-4">
-            <p class="has-text-weight-semibold mb-2">Approved Annotations by State</p>
-            <div style="max-width: 420px;">
-              <canvas id="approvedStateAnnotationsChart" height="220"></canvas>
-            </div>
-          </div>
-        </div>
-        <hr>
-        <div>
-          <p class="has-text-weight-semibold mb-2">Daily Annotations Progress</p>
-          <div class="daily-progress-shell">
-            <div class="daily-progress-summary">
-              <div class="daily-progress-chip">Tracked Days: {{ daily_progress|length }}</div>
-              <div class="daily-progress-chip">Latest Daily Count: {{ daily_progress[-1].count if daily_progress else 0 }}</div>
-              <div class="daily-progress-chip">Cumulative Total: {{ daily_progress[-1].cumulative if daily_progress else 0 }}</div>
-            </div>
-            <canvas id="dailyProgressChart" height="120"></canvas>
-          </div>
+        <div id="adminDashboardStats" class="admin-stats-placeholder">
+          <p class="has-text-weight-semibold mb-2">Dashboard stats are not loaded yet.</p>
+          <p class="has-text-grey mb-0">Use the button above to fetch the summary cards and progress visualizations dynamically.</p>
         </div>
       </div>
     </div>
@@ -365,7 +359,29 @@
 
     <div class="card mb-5">
       <div class="card-content">
-        <h2 class="title is-5">Query Results ({{ filtered_records|length }})</h2>
+        {% if show_query_summary %}
+          <div class="columns is-multiline mb-3">
+            <div class="column is-4">
+              <div class="box has-text-centered">
+                <p class="heading">Total</p>
+                <p class="title is-4">{{ query_summary_counts.total }}</p>
+              </div>
+            </div>
+            <div class="column is-4">
+              <div class="box has-text-centered">
+                <p class="heading">Reviewed</p>
+                <p class="title is-4">{{ query_summary_counts.validated }}</p>
+              </div>
+            </div>
+            <div class="column is-4">
+              <div class="box has-text-centered">
+                <p class="heading">Approved</p>
+                <p class="title is-4">{{ query_summary_counts.approved }}</p>
+              </div>
+            </div>
+          </div>
+        {% endif %}
+        <h2 class="title is-5">Query Results ({{ total_filtered_records }})</h2>
         {% if not filtered_records %}
           <p>No annotations match the selected filters.</p>
         {% else %}
@@ -387,7 +403,7 @@
             <tbody>
               {% for r in filtered_records %}
               <tr class="{% if r._is_onboarded %}onboarded-row{% endif %}">
-                <td>{{ loop.index }}.</td>
+                <td>{{ ((current_page - 1) * results_per_page) + loop.index }}.</td>
                 <td>{{ (r.timestamp or r.created_at or "")[:10] }}</td>
                 <td>{{ r.state }}</td>
                 <td>{{ r.annotator_name }}</td>
@@ -446,6 +462,32 @@
               {% endfor %}
             </tbody>
           </table>
+          <div class="pagination-shell">
+            <p class="pagination-meta">
+              Showing {{ ((current_page - 1) * results_per_page) + 1 }}–{{ ((current_page - 1) * results_per_page) + (filtered_records|length) }} of {{ total_filtered_records }}
+            </p>
+            <nav class="pagination is-small" role="navigation" aria-label="pagination">
+              {% if prev_page_url %}
+                <a class="pagination-previous" href="{{ prev_page_url }}">Previous</a>
+              {% else %}
+                <span class="pagination-previous" disabled>Previous</span>
+              {% endif %}
+              {% if next_page_url %}
+                <a class="pagination-next" href="{{ next_page_url }}">Next</a>
+              {% else %}
+                <span class="pagination-next" disabled>Next</span>
+              {% endif %}
+              <ul class="pagination-list">
+                {% for page_number in page_numbers %}
+                  {% if page_number == current_page %}
+                    <li><span class="pagination-link is-current">{{ page_number }}</span></li>
+                  {% else %}
+                    <li><a class="pagination-link" href="{{ page_urls[page_number] }}">{{ page_number }}</a></li>
+                  {% endif %}
+                {% endfor %}
+              </ul>
+            </nav>
+          </div>
         {% endif %}
       </div>
     </div>
@@ -458,48 +500,36 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  const stateStats = {{ state_stats | tojson }};
-  const reviewedStateStats = {{ reviewed_state_stats | tojson }};
-  const approvedStateStats = {{ approved_state_stats | tojson }};
-  const dailyProgress = {{ daily_progress | tojson }};
-
-  const stateLabels = stateStats.map((row) => row.state);
-  const stateCounts = stateStats.map((row) => row.annotation_count);
-  const reviewedStateLabels = reviewedStateStats.map((row) => row.state);
-  const reviewedStateCounts = reviewedStateStats.map((row) => row.annotation_count);
-  const approvedStateLabels = approvedStateStats.map((row) => row.state);
-  const approvedStateCounts = approvedStateStats.map((row) => row.annotation_count);
-  const dailyLabels = dailyProgress.map((row) => row.date);
-  const dailyCounts = dailyProgress.map((row) => row.count);
-  const cumulativeCounts = dailyProgress.map((row) => row.cumulative);
-
+  const dashboardStatsContainer = document.getElementById("adminDashboardStats");
+  const loadDashboardStatsBtn = document.getElementById("loadDashboardStatsBtn");
+  let adminDashboardCharts = [];
   const statePalette = [
     "#4F46E5", "#0EA5E9", "#22C55E", "#F59E0B", "#EF4444",
     "#14B8A6", "#A855F7", "#84CC16", "#EAB308", "#F97316",
     "#06B6D4", "#10B981", "#F43F5E", "#8B5CF6", "#F97316",
     "#3B82F6", "#65A30D", "#D97706", "#DC2626", "#7C3AED"
   ];
-  const allChartStates = Array.from(new Set(
-    [...stateLabels, ...reviewedStateLabels, ...approvedStateLabels]
-  )).sort((a, b) => a.localeCompare(b));
-  const stateColorMap = Object.fromEntries(
-    allChartStates.map((state, index) => [state, statePalette[index % statePalette.length]])
-  );
 
-  function colorsForStates(labels) {
+  function colorsForStates(labels, stateColorMap) {
     return labels.map((label) => stateColorMap[label] || "#94A3B8");
   }
 
-  function buildPieChart(canvasId, labels, counts, emptyMessage) {
+  function destroyAdminDashboardCharts() {
+    adminDashboardCharts.forEach((chart) => chart.destroy());
+    adminDashboardCharts = [];
+  }
+
+  function buildPieChart(canvasId, labels, counts, emptyMessage, stateColorMap) {
     const ctx = document.getElementById(canvasId);
-    if (ctx && counts.some((x) => x > 0)) {
-      new Chart(ctx, {
+    if (!ctx) return;
+    if (counts.some((x) => x > 0)) {
+      const chart = new Chart(ctx, {
         type: "pie",
         data: {
           labels,
           datasets: [{
             data: counts,
-            backgroundColor: colorsForStates(labels),
+            backgroundColor: colorsForStates(labels, stateColorMap),
             borderWidth: 1
           }]
         },
@@ -510,105 +540,177 @@
           }
         }
       });
-    } else if (ctx) {
+      adminDashboardCharts.push(chart);
+    } else {
       ctx.parentElement.insertAdjacentHTML("beforeend", `<p class='has-text-grey'>${emptyMessage}</p>`);
     }
   }
 
-  buildPieChart("stateAnnotationsChart", stateLabels, stateCounts, "No annotation data yet.");
-  buildPieChart("reviewedStateAnnotationsChart", reviewedStateLabels, reviewedStateCounts, "No reviewed annotations yet.");
-  buildPieChart("approvedStateAnnotationsChart", approvedStateLabels, approvedStateCounts, "No approved annotations yet.");
+  function buildDailyProgressChart(dailyProgress) {
+    const dailyLabels = dailyProgress.map((row) => row.date);
+    const dailyCounts = dailyProgress.map((row) => row.count);
+    const cumulativeCounts = dailyProgress.map((row) => row.cumulative);
+    const dailyCtx = document.getElementById("dailyProgressChart");
+    if (!dailyCtx) return;
+    if (dailyCounts.some((x) => x > 0)) {
+      const gradient = dailyCtx.getContext("2d").createLinearGradient(0, 0, 0, 240);
+      gradient.addColorStop(0, "rgba(14, 165, 233, 0.75)");
+      gradient.addColorStop(1, "rgba(37, 99, 235, 0.15)");
 
-  const dailyCtx = document.getElementById("dailyProgressChart");
-  if (dailyCtx && dailyCounts.some((x) => x > 0)) {
-    const gradient = dailyCtx.getContext("2d").createLinearGradient(0, 0, 0, 240);
-    gradient.addColorStop(0, "rgba(14, 165, 233, 0.75)");
-    gradient.addColorStop(1, "rgba(37, 99, 235, 0.15)");
-
-    new Chart(dailyCtx, {
-      data: {
-        labels: dailyLabels,
-        datasets: [{
-          type: "bar",
-          label: "Daily annotations",
-          data: dailyCounts,
-          backgroundColor: gradient,
-          borderColor: "rgba(14, 116, 144, 0.95)",
-          borderWidth: 1,
-          borderRadius: 8,
-          borderSkipped: false,
-          maxBarThickness: 28,
-          yAxisID: "y",
-        }, {
-          type: "line",
-          label: "Cumulative total",
-          data: cumulativeCounts,
-          borderColor: "#16A34A",
-          backgroundColor: "rgba(22, 163, 74, 0.14)",
-          fill: false,
-          tension: 0.3,
-          pointRadius: 3,
-          pointHoverRadius: 5,
-          pointBackgroundColor: "#16A34A",
-          pointBorderColor: "#ffffff",
-          pointBorderWidth: 2,
-          yAxisID: "y1",
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: {
-            position: "bottom",
-            labels: {
-              usePointStyle: true,
-              boxWidth: 10,
+      const chart = new Chart(dailyCtx, {
+        data: {
+          labels: dailyLabels,
+          datasets: [{
+            type: "bar",
+            label: "Daily annotations",
+            data: dailyCounts,
+            backgroundColor: gradient,
+            borderColor: "rgba(14, 116, 144, 0.95)",
+            borderWidth: 1,
+            borderRadius: 8,
+            borderSkipped: false,
+            maxBarThickness: 28,
+            yAxisID: "y",
+          }, {
+            type: "line",
+            label: "Cumulative total",
+            data: cumulativeCounts,
+            borderColor: "#16A34A",
+            backgroundColor: "rgba(22, 163, 74, 0.14)",
+            fill: false,
+            tension: 0.3,
+            pointRadius: 3,
+            pointHoverRadius: 5,
+            pointBackgroundColor: "#16A34A",
+            pointBorderColor: "#ffffff",
+            pointBorderWidth: 2,
+            yAxisID: "y1",
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: {
+                usePointStyle: true,
+                boxWidth: 10,
+              }
+            },
+            tooltip: {
+              mode: "index",
+              intersect: false,
             }
           },
-          tooltip: {
+          interaction: {
             mode: "index",
             intersect: false,
-          }
-        },
-        interaction: {
-          mode: "index",
-          intersect: false,
-        },
-        scales: {
-          y: {
-            beginAtZero: true,
-            title: {
-              display: true,
-              text: "Daily Count"
-            },
-            ticks: {
-              precision: 0
-            }
           },
-          y1: {
-            beginAtZero: true,
-            position: "right",
-            grid: {
-              drawOnChartArea: false
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: { display: true, text: "Daily Count" },
+              ticks: { precision: 0 }
             },
-            title: {
-              display: true,
-              text: "Cumulative"
+            y1: {
+              beginAtZero: true,
+              position: "right",
+              grid: { drawOnChartArea: false },
+              title: { display: true, text: "Cumulative" },
+              ticks: { precision: 0 }
             },
-            ticks: {
-              precision: 0
-            }
-          },
-          x: {
-            grid: {
-              display: false
+            x: {
+              grid: { display: false }
             }
           }
         }
+      });
+      adminDashboardCharts.push(chart);
+    } else {
+      dailyCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No daily timestamp data available.</p>");
+    }
+  }
+
+  function renderAdminDashboardStats(data) {
+    const dailyProgress = data.daily_progress || [];
+    dashboardStatsContainer.innerHTML = `
+      <h2 class="title is-5">Summary</h2>
+      <p class="mb-3"><strong>Data Source:</strong> ${data.data_source || ""}</p>
+      <div class="columns is-multiline">
+        <div class="column is-3"><div class="box has-text-centered"><p class="heading">Registered Annotators</p><p class="title is-4">${data.totals.registered_annotators}</p></div></div>
+        <div class="column is-3"><div class="box has-text-centered"><p class="heading">Active Annotators</p><p class="title is-4">${data.totals.active_annotators}</p></div></div>
+        <div class="column is-3"><div class="box has-text-centered"><p class="heading">Total Annotations</p><p class="title is-4">${data.totals.total_annotations}</p></div></div>
+        <div class="column is-3"><div class="box has-text-centered"><p class="heading">States Covered</p><p class="title is-4">${data.totals.states_covered}</p></div></div>
+      </div>
+      <div class="card mt-4">
+        <div class="card-content">
+          <h2 class="title is-5">Progress Visualizations</h2>
+          <div class="columns is-variable is-5 is-multiline">
+            <div class="column is-4"><p class="has-text-weight-semibold mb-2">Total Annotations by State</p><div style="max-width: 420px;"><canvas id="stateAnnotationsChart" height="220"></canvas></div></div>
+            <div class="column is-4"><p class="has-text-weight-semibold mb-2">Total Validated Annotations by State</p><div style="max-width: 420px;"><canvas id="reviewedStateAnnotationsChart" height="220"></canvas></div></div>
+            <div class="column is-4"><p class="has-text-weight-semibold mb-2">Approved Annotations by State</p><div style="max-width: 420px;"><canvas id="approvedStateAnnotationsChart" height="220"></canvas></div></div>
+          </div>
+          <hr>
+          <div>
+            <p class="has-text-weight-semibold mb-2">Daily Annotations Progress</p>
+            <div class="daily-progress-shell">
+              <div class="daily-progress-summary">
+                <div class="daily-progress-chip">Tracked Days: ${dailyProgress.length}</div>
+                <div class="daily-progress-chip">Latest Daily Count: ${dailyProgress.length ? dailyProgress[dailyProgress.length - 1].count : 0}</div>
+                <div class="daily-progress-chip">Cumulative Total: ${dailyProgress.length ? dailyProgress[dailyProgress.length - 1].cumulative : 0}</div>
+              </div>
+              <canvas id="dailyProgressChart" height="120"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    destroyAdminDashboardCharts();
+
+    const stateLabels = (data.state_stats || []).map((row) => row.state);
+    const stateCounts = (data.state_stats || []).map((row) => row.annotation_count);
+    const reviewedStateLabels = (data.reviewed_state_stats || []).map((row) => row.state);
+    const reviewedStateCounts = (data.reviewed_state_stats || []).map((row) => row.annotation_count);
+    const approvedStateLabels = (data.approved_state_stats || []).map((row) => row.state);
+    const approvedStateCounts = (data.approved_state_stats || []).map((row) => row.annotation_count);
+    const allChartStates = Array.from(new Set(
+      [...stateLabels, ...reviewedStateLabels, ...approvedStateLabels]
+    )).sort((a, b) => a.localeCompare(b));
+    const stateColorMap = Object.fromEntries(
+      allChartStates.map((state, index) => [state, statePalette[index % statePalette.length]])
+    );
+
+    buildPieChart("stateAnnotationsChart", stateLabels, stateCounts, "No annotation data yet.", stateColorMap);
+    buildPieChart("reviewedStateAnnotationsChart", reviewedStateLabels, reviewedStateCounts, "No reviewed annotations yet.", stateColorMap);
+    buildPieChart("approvedStateAnnotationsChart", approvedStateLabels, approvedStateCounts, "No approved annotations yet.", stateColorMap);
+    buildDailyProgressChart(dailyProgress);
+  }
+
+  async function loadAdminDashboardStats() {
+    const targetUrl = loadDashboardStatsBtn?.dataset.url;
+    if (!targetUrl || !dashboardStatsContainer) return;
+    loadDashboardStatsBtn.disabled = true;
+    loadDashboardStatsBtn.classList.add("is-loading");
+    dashboardStatsContainer.innerHTML = "<p class='has-text-grey'>Loading dashboard stats…</p>";
+    try {
+      const response = await fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
       }
-    });
-  } else if (dailyCtx) {
-    dailyCtx.parentElement.insertAdjacentHTML("beforeend", "<p class='has-text-grey'>No daily timestamp data available.</p>");
+      const data = await response.json();
+      renderAdminDashboardStats(data);
+      loadDashboardStatsBtn.textContent = "Reload Dashboard Stats";
+    } catch (error) {
+      dashboardStatsContainer.innerHTML = `<div class="notification is-warning is-light mb-0">Could not load dashboard stats: ${error.message}</div>`;
+    } finally {
+      loadDashboardStatsBtn.disabled = false;
+      loadDashboardStatsBtn.classList.remove("is-loading");
+    }
+  }
+
+  if (loadDashboardStatsBtn) {
+    loadDashboardStatsBtn.addEventListener("click", loadAdminDashboardStats);
   }
 </script>
 {% endblock %}

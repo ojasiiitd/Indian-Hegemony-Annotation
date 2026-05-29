@@ -34,6 +34,10 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Sylesh",
 	"Subham48",
 	"Lila Ghimire",
+	"neerav",
+	"Sohail Khan"
+	"Adya",
+	"kameshwari04",
 ]
 
 HEGEMONY_AXES = [

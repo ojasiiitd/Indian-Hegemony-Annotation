@@ -1,6 +1,7 @@
 import json, os, uuid
+from config import BASE_DIR
 
-DRAFT_DIR = "annotation_app/data/drafts"
+DRAFT_DIR = os.path.join(BASE_DIR, "data", "drafts")
 
 os.makedirs(DRAFT_DIR, exist_ok=True)
 

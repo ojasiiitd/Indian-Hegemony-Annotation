@@ -36,6 +36,7 @@ from iaa_store import (
 import csv
 import io
 import random
+from urllib.parse import urlencode
 
 app = Flask(__name__)
 app.secret_key = KEYS["FLASK_SECRET_KEY"]
@@ -339,6 +340,112 @@ def _parse_record_datetime(record):
 def _record_day(record):
     parsed_dt = _parse_record_datetime(record)
     return parsed_dt.date().isoformat() if parsed_dt else ""
+
+
+def _build_admin_dashboard_stats(records, annotators):
+    annotation_count_by_annotator = Counter(
+        (r.get("annotator_name") or "").strip() for r in records if (r.get("annotator_name") or "").strip()
+    )
+
+    annotator_stats = []
+    seen_usernames = set()
+    for annotator in annotators:
+        username = (annotator.get("username") or "").strip()
+        if not username:
+            continue
+        seen_usernames.add(username)
+        annotator_stats.append({
+            "username": username,
+            "state": (annotator.get("state") or "Unknown").strip() or "Unknown",
+            "region": (annotator.get("region") or "Unknown").strip() or "Unknown",
+            "annotation_count": annotation_count_by_annotator.get(username, 0),
+        })
+
+    for username, count in annotation_count_by_annotator.items():
+        if username not in seen_usernames:
+            annotator_stats.append({
+                "username": username,
+                "state": "Unknown",
+                "region": "Unknown",
+                "annotation_count": count,
+            })
+
+    annotator_stats.sort(key=lambda x: (-x["annotation_count"], x["username"].lower()))
+
+    registered_by_state = Counter(
+        (a.get("state") or "Unknown").strip() or "Unknown" for a in annotators
+    )
+
+    state_annotation_count = Counter()
+    reviewed_state_annotation_count = Counter()
+    approved_state_annotation_count = Counter()
+    state_active_annotators = defaultdict(set)
+    for record in records:
+        state = (record.get("state") or "Unknown").strip() or "Unknown"
+        username = (record.get("annotator_name") or "").strip()
+        state_annotation_count[state] += 1
+        acceptance_status = _acceptance_status(record.get("isAccept"))
+        if acceptance_status != "pending":
+            reviewed_state_annotation_count[state] += 1
+        if acceptance_status in ("accepted", "needs_restructuring"):
+            approved_state_annotation_count[state] += 1
+        if username:
+            state_active_annotators[state].add(username)
+
+    all_states = set(registered_by_state.keys()) | set(state_annotation_count.keys())
+    state_stats = [
+        {
+            "state": state,
+            "registered_annotators": registered_by_state.get(state, 0),
+            "active_annotators": len(state_active_annotators.get(state, set())),
+            "annotation_count": state_annotation_count.get(state, 0),
+        }
+        for state in sorted(all_states)
+    ]
+    state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    reviewed_state_stats = [
+        {"state": state, "annotation_count": count}
+        for state, count in reviewed_state_annotation_count.items()
+    ]
+    reviewed_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    approved_state_stats = [
+        {"state": state, "annotation_count": count}
+        for state, count in approved_state_annotation_count.items()
+    ]
+    approved_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
+
+    daily_annotation_count = Counter()
+    for record in records:
+        day_key = _record_day(record)
+        if day_key:
+            daily_annotation_count[day_key] += 1
+
+    running_total = 0
+    daily_progress = []
+    for day in sorted(daily_annotation_count.keys()):
+        running_total += daily_annotation_count[day]
+        daily_progress.append({
+            "date": day,
+            "count": daily_annotation_count[day],
+            "cumulative": running_total,
+        })
+
+    totals = {
+        "registered_annotators": len([a for a in annotators if (a.get("username") or "").strip()]),
+        "active_annotators": len([s for s in annotator_stats if s["annotation_count"] > 0]),
+        "total_annotations": len(records),
+        "states_covered": len(all_states),
+    }
+
+    return {
+        "totals": totals,
+        "state_stats": state_stats,
+        "reviewed_state_stats": reviewed_state_stats,
+        "approved_state_stats": approved_state_stats,
+        "daily_progress": daily_progress,
+    }
 
 
 def _is_annotation_completed(record):
@@ -730,8 +837,11 @@ def confirm():
         abort(400)
 
     record = load_draft(draft_id)
-    delete_draft(draft_id)
+    if not record:
+        abort(409, description="Draft could not be loaded for confirmation.")
+
     saved_id, mode = _persist_annotation_record(record, editing_id=editing_id)
+    delete_draft(draft_id)
     print(f"confirm persisted annotation {saved_id} ({mode})")
 
     return redirect("/")
@@ -758,115 +868,16 @@ def admin():
         data_source = "Local JSONL (fallback)"
         error = f"Could not load records from Google Sheets: {e}. Showing local data."
 
-    try:
-        annotators = load_annotators()
-    except Exception as e:
-        annotators = []
-        if not error:
-            error = f"Could not load registered annotators: {e}"
-
-    annotation_count_by_annotator = Counter(
-        (r.get("annotator_name") or "").strip() for r in records if (r.get("annotator_name") or "").strip()
-    )
-
-    annotator_stats = []
-    seen_usernames = set()
-    for a in annotators:
-        username = (a.get("username") or "").strip()
-        if not username:
-            continue
-        seen_usernames.add(username)
-        annotator_stats.append({
-            "username": username,
-            "state": (a.get("state") or "Unknown").strip() or "Unknown",
-            "region": (a.get("region") or "Unknown").strip() or "Unknown",
-            "annotation_count": annotation_count_by_annotator.get(username, 0),
-        })
-
-    # Include annotations from usernames not present in annotators.json
-    for username, count in annotation_count_by_annotator.items():
-        if username not in seen_usernames:
-            annotator_stats.append({
-                "username": username,
-                "state": "Unknown",
-                "region": "Unknown",
-                "annotation_count": count,
-            })
-
-    annotator_stats.sort(key=lambda x: (-x["annotation_count"], x["username"].lower()))
-
-    registered_by_state = Counter(
-        (a.get("state") or "Unknown").strip() or "Unknown" for a in annotators
-    )
-
-    state_annotation_count = Counter()
-    reviewed_state_annotation_count = Counter()
-    approved_state_annotation_count = Counter()
-    state_active_annotators = defaultdict(set)
-    for r in records:
-        state = (r.get("state") or "Unknown").strip() or "Unknown"
-        username = (r.get("annotator_name") or "").strip()
-        state_annotation_count[state] += 1
-        acceptance_status = _acceptance_status(r.get("isAccept"))
-        if acceptance_status != "pending":
-            reviewed_state_annotation_count[state] += 1
-        if acceptance_status in ("accepted", "needs_restructuring"):
-            approved_state_annotation_count[state] += 1
-        if username:
-            state_active_annotators[state].add(username)
-
-    all_states = set(registered_by_state.keys()) | set(state_annotation_count.keys())
-    state_stats = []
-    for state in sorted(all_states):
-        state_stats.append({
-            "state": state,
-            "registered_annotators": registered_by_state.get(state, 0),
-            "active_annotators": len(state_active_annotators.get(state, set())),
-            "annotation_count": state_annotation_count.get(state, 0),
-        })
-
-    state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
-
-    reviewed_state_stats = [
-        {"state": state, "annotation_count": count}
-        for state, count in reviewed_state_annotation_count.items()
-    ]
-    reviewed_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
-
-    approved_state_stats = [
-        {"state": state, "annotation_count": count}
-        for state, count in approved_state_annotation_count.items()
-    ]
-    approved_state_stats.sort(key=lambda x: (-x["annotation_count"], x["state"].lower()))
-
-    daily_annotation_count = Counter()
-    for r in records:
-        day_key = _record_day(r)
-        if day_key:
-            daily_annotation_count[day_key] += 1
-
-    running_total = 0
-    daily_progress = []
-    for day in sorted(daily_annotation_count.keys()):
-        running_total += daily_annotation_count[day]
-        daily_progress.append({
-            "date": day,
-            "count": daily_annotation_count[day],
-            "cumulative": running_total,
-        })
-
-    totals = {
-        "registered_annotators": len([a for a in annotators if (a.get("username") or "").strip()]),
-        "active_annotators": len([s for s in annotator_stats if s["annotation_count"] > 0]),
-        "total_annotations": len(records),
-        "states_covered": len(all_states),
-    }
-
     query_state = (request.args.get("state") or "").strip()
     query_annotator = (request.args.get("annotator") or "").strip()
     query_validation = (request.args.get("validation") or "").strip()
     query_drafts = (request.args.get("drafts") or "hide").strip() or "hide"
     query_sort = (request.args.get("sort") or "date_desc").strip() or "date_desc"
+    try:
+        query_page = max(int(request.args.get("page", "1")), 1)
+    except ValueError:
+        query_page = 1
+    results_per_page = 200
 
     filtered_records = []
     for r in records:
@@ -947,6 +958,38 @@ def admin():
         query_sort = "date_desc"
     filtered_records.sort(key=selected_sort["key"], reverse=selected_sort["reverse"])
 
+    total_filtered_records = len(filtered_records)
+    query_summary_counts = {
+        "total": total_filtered_records,
+        "validated": sum(1 for record in filtered_records if record.get("_is_validated")),
+        "approved": sum(
+            1 for record in filtered_records
+            if str(record.get("isAccept") or "").strip().casefold() == "yes"
+        ),
+    }
+    show_query_summary = bool(request.args)
+    total_pages = max((total_filtered_records + results_per_page - 1) // results_per_page, 1)
+    if query_page > total_pages:
+        query_page = total_pages
+    start_index = (query_page - 1) * results_per_page
+    end_index = start_index + results_per_page
+    paginated_records = filtered_records[start_index:end_index]
+
+    pagination_params = {
+        "state": query_state,
+        "annotator": query_annotator,
+        "validation": query_validation,
+        "drafts": query_drafts,
+        "sort": query_sort,
+    }
+
+    def _admin_page_url(page_number):
+        params = {**pagination_params, "page": page_number}
+        clean_params = {key: value for key, value in params.items() if value not in ("", None)}
+        return f"{url_for('admin')}?{urlencode(clean_params)}"
+
+    page_numbers = list(range(max(1, query_page - 2), min(total_pages, query_page + 2) + 1))
+
     available_states = sorted({
         (r.get("state") or "").strip()
         for r in records
@@ -957,13 +1000,17 @@ def admin():
         "admin.html",
         user=user,
         region_state_map=REGION_STATE_MAP,
-        records=records,
-        annotator_stats=annotator_stats,
-        state_stats=state_stats,
-        reviewed_state_stats=reviewed_state_stats,
-        approved_state_stats=approved_state_stats,
-        daily_progress=daily_progress,
-        filtered_records=filtered_records,
+        filtered_records=paginated_records,
+        total_filtered_records=total_filtered_records,
+        query_summary_counts=query_summary_counts,
+        show_query_summary=show_query_summary,
+        results_per_page=results_per_page,
+        current_page=query_page,
+        total_pages=total_pages,
+        page_numbers=page_numbers,
+        prev_page_url=_admin_page_url(query_page - 1) if query_page > 1 else None,
+        next_page_url=_admin_page_url(query_page + 1) if query_page < total_pages else None,
+        page_urls={page_number: _admin_page_url(page_number) for page_number in page_numbers},
         available_states=available_states,
         query_state=query_state,
         query_annotator=query_annotator,
@@ -971,10 +1018,32 @@ def admin():
         query_drafts=query_drafts,
         query_sort=query_sort,
         sort_options={key: option["label"] for key, option in sort_options.items()},
-        totals=totals,
         data_source=data_source,
         error=error,
     )
+
+
+@app.route("/admin/dashboard-stats")
+@admin_required
+def admin_dashboard_stats():
+    data_source = "Google Sheets"
+    try:
+        records = load_records_from_sheet()
+    except Exception as e:
+        records = load_records()
+        data_source = f"Local JSONL (fallback): {e}"
+
+    try:
+        annotators = load_annotators()
+    except Exception as e:
+        annotators = []
+        data_source = f"{data_source} | Annotators fallback issue: {e}"
+
+    stats = _build_admin_dashboard_stats(records, annotators)
+    return jsonify({
+        "data_source": data_source,
+        **stats,
+    })
 
 
 @app.route("/admin/iaa-reviews.csv")
