@@ -35,7 +35,7 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Subham48",
 	"Lila Ghimire",
 	"neerav",
-	"Sohail Khan"
+	"Sohail Khan",
 	"Adya",
 	"kameshwari04",
 ]
