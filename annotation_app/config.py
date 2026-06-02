@@ -135,7 +135,7 @@ HEADERS = [
 	"gpt_identity_colorism",
 	"gpt_identity_colorism_impact",
 
-	# === LLAMA BASE ===
+	# === LLAMA i.e GPT-OSS-120B BASE ===
 	"llama_base_output",
 	"llama_base_hallucination",
 	"llama_base_social",
@@ -151,7 +151,7 @@ HEADERS = [
 	"llama_base_colorism",
 	"llama_base_colorism_impact",
 
-	# === LLAMA IDENTITY ===
+	# === LLAMA i.e GPT-OSS-120B IDENTITY ===
 	"llama_identity_output",
 	"llama_identity_hallucination",
 	"llama_identity_social",
