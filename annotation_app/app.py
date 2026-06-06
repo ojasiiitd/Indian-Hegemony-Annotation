@@ -198,10 +198,12 @@ def _is_iaa_approved_record(record):
     return clean_value in {"yes", "accepted", "approved", "true", "1"}
 
 
-def _parse_iaa_score(form, field_name, default=0):
+def _parse_iaa_score(form, field_name, default=None):
     raw_value = str(form.get(field_name, default)).strip()
-    if raw_value in {"0", "1", "2", "3", "4", "5"}:
+    if raw_value in {"1", "2", "3", "4", "5"}:
         return int(raw_value)
+    if default is None:
+        raise ValueError(f"Invalid IAA score for {field_name}.")
     return int(default)
 
 
@@ -212,7 +214,7 @@ def _optional_text(form, field_name):
 
 def _parse_optional_iaa_score(form, field_name):
     raw_value = str(form.get(field_name, "") or "").strip()
-    if raw_value in {"0", "1", "2", "3", "4", "5"}:
+    if raw_value in {"1", "2", "3", "4", "5"}:
         return int(raw_value)
     return None
 
@@ -223,8 +225,9 @@ def _iaa_review_to_form_values(review):
 
     field_map = {
         "prompt_q0": "prompt_q1_clarity_format",
-        "prompt_q1": "prompt_q2_cultural_context",
-        "prompt_q2": "prompt_q3_identity_relevance",
+        "prompt_q1": "prompt_q2_identity_relevance",
+        "prompt_q2": "prompt_q3_cultural_context",
+        "prompt_q3": "prompt_q4_hegemony_potential",
         "ground_truth_rating": "groundtruth_q1_corrective_quality",
         "optional_comment": "optional_comment",
         "reviewer_confidence": "reviewer_confidence",
@@ -256,8 +259,9 @@ def _build_iaa_review_payload(form, user, record):
         "editable": 0,
         "completed": 1,
         "prompt_q1_clarity_format": _parse_iaa_score(form, "prompt_q0"),
-        "prompt_q2_cultural_context": _parse_iaa_score(form, "prompt_q1"),
-        "prompt_q3_identity_relevance": _parse_iaa_score(form, "prompt_q2"),
+        "prompt_q2_identity_relevance": _parse_iaa_score(form, "prompt_q1"),
+        "prompt_q3_cultural_context": _parse_iaa_score(form, "prompt_q2"),
+        "prompt_q4_hegemony_potential": _parse_iaa_score(form, "prompt_q3"),
         "groundtruth_q1_corrective_quality": _parse_iaa_score(form, "ground_truth_rating"),
         "optional_comment": _optional_text(form, "optional_comment"),
         "reviewer_confidence": _parse_optional_iaa_score(form, "reviewer_confidence"),
@@ -755,6 +759,8 @@ def submit_review():
         save_iaa_review(_build_iaa_review_payload(request.form, user, record))
     except PermissionError:
         return redirect(url_for("prompt_review", info="This IAA review is locked and can no longer be edited."))
+    except ValueError:
+        abort(400)
 
     return redirect(url_for("prompt_review", info="IAA review submitted."))
 

@@ -8,8 +8,9 @@ IAA_DB_PATH = Path(BASE_DIR) / "data" / "iaa_reviews.db"
 
 PROMPT_FIELDS = [
     "prompt_q1_clarity_format",
-    "prompt_q2_cultural_context",
-    "prompt_q3_identity_relevance",
+    "prompt_q2_identity_relevance",
+    "prompt_q3_cultural_context",
+    "prompt_q4_hegemony_potential",
 ]
 
 OUTPUT_FIELD_SUFFIXES = [
@@ -94,6 +95,14 @@ def _ensure_schema(conn):
         )
         """
     )
+    existing_columns = {
+        row["name"]
+        for row in conn.execute("PRAGMA table_info(iaa_reviews)").fetchall()
+    }
+    for column in PROMPT_FIELDS + OUTPUT_FIELDS + GROUND_TRUTH_FIELDS + OPTIONAL_FIELDS:
+        if column not in existing_columns:
+            column_type = "TEXT" if column in {"optional_comment", "admin_notes"} else "INTEGER"
+            conn.execute(f"ALTER TABLE iaa_reviews ADD COLUMN {column} {column_type}")
     conn.commit()
 
 
