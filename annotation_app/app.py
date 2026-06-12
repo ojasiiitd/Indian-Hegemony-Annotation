@@ -103,6 +103,45 @@ STATE_REVIEW_ASSIGNMENT_CONFIGS = {
             "Sohail Khan": 15,
         },
     },
+    "west bengal": {
+        "seed": "iaa-wb-v1",
+        "annotators": [
+            "Arnab6203",
+            "Subham48",
+            "Lila Ghimire",
+        ],
+        "per_annotator_quota": {
+            "Arnab6203": 10,
+            "Subham48": 10,
+            "Lila Ghimire": 10,
+        },
+    },
+    "haryana": {
+        "seed": "iaa-haryana-v1",
+        "annotators": [
+            "nishtharajput",
+            "Ajit Rana",
+            "Priyanka",
+        ],
+        "per_annotator_quota": {
+            "nishtharajput": 10,
+            "Ajit Rana": 10,
+            "Priyanka": 10,
+        },
+    },
+    "maharashtra": {
+        "seed": "iaa-maharashtra-v1",
+        "annotators": [
+            "Manasikelkar26",
+            "Riddhi157",
+            "Aishwarya Gadgil",
+        ],
+        "per_annotator_quota": {
+            "Manasikelkar26": 10,
+            "Riddhi157": 10,
+            "Aishwarya Gadgil": 10,
+        },
+    },
 }
 
 @app.before_request
@@ -267,26 +306,101 @@ def _build_seeded_state_review_assignments(records, state_name):
         selected_records = _sorted_records_for_sampling(selected_records)
         selected_by_creator[creator_key] = selected_records
 
-    assignments = {}
-    for reviewer_username in configured_annotators:
-        reviewer_key = _normalize_username(reviewer_username)
-        assigned_records = []
-        for creator_key, selected_records in selected_by_creator.items():
-            if creator_key == reviewer_key:
-                continue
-            assigned_records.extend(selected_records)
+    assignments = {
+        _normalize_username(reviewer_username): []
+        for reviewer_username in configured_annotators
+    }
+
+    configured_annotator_keys = [
+        _normalize_username(username)
+        for username in configured_annotators
+    ]
+
+    for creator_key, selected_records in selected_by_creator.items():
+        other_reviewer_keys = [
+            reviewer_key
+            for reviewer_key in configured_annotator_keys
+            if reviewer_key != creator_key
+        ]
+        if not other_reviewer_keys or not selected_records:
+            continue
+
+        if len(other_reviewer_keys) == 1:
+            assignments[other_reviewer_keys[0]].extend(selected_records)
+            continue
+
+        base_chunk_size, remainder = divmod(len(selected_records), len(other_reviewer_keys))
+        start_idx = 0
+        for idx, reviewer_key in enumerate(other_reviewer_keys):
+            extra = 1 if idx < remainder else 0
+            end_idx = start_idx + base_chunk_size + extra
+            assignments[reviewer_key].extend(selected_records[start_idx:end_idx])
+            start_idx = end_idx
+
+    for reviewer_key, assigned_records in list(assignments.items()):
         assignments[reviewer_key] = _dedupe_records_by_id(_sorted_records_for_sampling(assigned_records))
 
     return assignments
 
 
+def _build_seeded_state_selected_records(records, state_name):
+    config = _get_state_review_assignment_config(state_name)
+    if not config:
+        return []
+
+    seed = str(config.get("seed") or state_name or "")
+    configured_annotators = [
+        username for username in config.get("annotators", [])
+        if _normalize_username(username)
+    ]
+    quotas_by_annotator = {
+        _normalize_username(username): int(quota)
+        for username, quota in (config.get("per_annotator_quota") or {}).items()
+        if _normalize_username(username)
+    }
+
+    approved_state_records = [
+        record for record in records
+        if _is_iaa_approved_record(record)
+        and _normalize_state_name(record.get("state")) == _normalize_state_name(state_name)
+        and _is_onboarded_annotator(record.get("annotator_name"))
+    ]
+
+    records_by_creator = defaultdict(list)
+    for record in approved_state_records:
+        creator_key = _normalize_username(record.get("annotator_name"))
+        if creator_key in quotas_by_annotator:
+            records_by_creator[creator_key].append(record)
+
+    selected_records = []
+    for creator_username in configured_annotators:
+        creator_key = _normalize_username(creator_username)
+        creator_records = _sorted_records_for_sampling(records_by_creator.get(creator_key, []))
+        requested_quota = quotas_by_annotator.get(creator_key, 0)
+
+        if requested_quota <= 0 or not creator_records:
+            continue
+
+        if len(creator_records) < requested_quota:
+            sampled_records = creator_records[:]
+        else:
+            creator_rng = random.Random(f"{seed}:{creator_key}")
+            sampled_records = creator_rng.sample(creator_records, requested_quota)
+
+        selected_records.extend(_sorted_records_for_sampling(sampled_records))
+
+    return _dedupe_records_by_id(_sorted_records_for_sampling(selected_records))
+
+
 def _reviewable_records_for_user(records, user):
     if user.get("role") == "admin":
+        configured_state_names = list(STATE_REVIEW_ASSIGNMENT_CONFIGS.keys())
+        admin_records = []
+        for state_name in configured_state_names:
+            admin_records.extend(_build_seeded_state_selected_records(records, state_name))
         return [
-            r for r in records
-            if _is_iaa_approved_record(r)
-            and _is_onboarded_annotator(r.get("annotator_name"))
-            and r.get("annotator_name") != user.get("username")
+            r for r in _dedupe_records_by_id(_sorted_records_for_sampling(admin_records))
+            if r.get("annotator_name") != user.get("username")
         ]
 
     state_name = user.get("state")
@@ -866,16 +980,12 @@ def review_annotation(annotation_id):
     if not _is_iaa_approved_record(record):
         return redirect(url_for("prompt_review", info="Only approved annotations are eligible for IAA review."))
 
-    if user.get("role") != "admin":
-        assigned_reviewable_records = _reviewable_records_for_user(records, user)
-        assigned_ids = {
-            str((assigned_record or {}).get("id") or "").strip()
-            for assigned_record in assigned_reviewable_records
-        }
-        if str(record.get("id") or "").strip() not in assigned_ids:
-            abort(403)
-
-    if user.get("role") == "admin" and record.get("annotator_name") == user.get("username"):
+    assigned_reviewable_records = _reviewable_records_for_user(records, user)
+    assigned_ids = {
+        str((assigned_record or {}).get("id") or "").strip()
+        for assigned_record in assigned_reviewable_records
+    }
+    if str(record.get("id") or "").strip() not in assigned_ids:
         abort(403)
 
     existing_review = fetch_iaa_review(annotation_id, user["username"])
