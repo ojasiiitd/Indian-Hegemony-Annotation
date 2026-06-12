@@ -66,6 +66,45 @@ ONBOARDED_ANNOTATOR_SET = {
     if _normalize_username(username)
 }
 
+ONBOARDED_ANNOTATOR_STATE_MAP = {
+    _normalize_username(username): str(state_name or "").strip()
+    for username, state_name in ONBOARDED_ANNOTATOR_USERNAMES_STATES.items()
+    if _normalize_username(username)
+}
+
+TEMP_INTER_ANNOTATOR_REVIEW_ACCESS = {
+    _normalize_username("ojastest"): "Uttar Pradesh",
+}
+
+TEMP_INTER_ANNOTATOR_REVIEW_USER_ALIAS = {
+    _normalize_username("ojastest"): _normalize_username("neerav"),
+}
+
+STATE_REVIEW_ASSIGNMENT_CONFIGS = {
+    "uttar pradesh": {
+        "seed": "iaa-up-v1",
+        "annotators": [
+            "neerav",
+            "Manshi Patel",
+        ],
+        "per_annotator_quota": {
+            "neerav": 15,
+            "Manshi Patel": 15,
+        },
+    },
+    "jammu and kashmir": {
+        "seed": "iaa-jk-v1",
+        "annotators": [
+            "Ashish",
+            "Sohail Khan",
+        ],
+        "per_annotator_quota": {
+            "Ashish": 15,
+            "Sohail Khan": 15,
+        },
+    },
+}
+
 @app.before_request
 def validate_session():
     try:
@@ -79,7 +118,8 @@ def inject_template_flags():
     user = session.get("user") or {}
     username = user.get("username")
     return {
-        "show_timesheet_link": _normalize_username(username) in ONBOARDED_ANNOTATOR_SET
+        "show_timesheet_link": _normalize_username(username) in ONBOARDED_ANNOTATOR_SET,
+        "show_inter_annotator_review_link": _can_access_inter_annotator_review(user),
     }
 
 def login_required(f):
@@ -116,6 +156,153 @@ def _preserve_record_fields(record, existing_record, field_names):
             record[field_name] = existing_record.get(field_name, "")
 
     return record
+
+
+def _normalize_state_name(value):
+    return " ".join(str(value or "").split()).casefold()
+
+
+def _get_state_review_assignment_config(state_name):
+    return STATE_REVIEW_ASSIGNMENT_CONFIGS.get(_normalize_state_name(state_name))
+
+
+def _is_onboarded_annotator(username):
+    return _normalize_username(username) in ONBOARDED_ANNOTATOR_SET
+
+
+def _effective_inter_annotator_review_username(username):
+    username_key = _normalize_username(username)
+    return TEMP_INTER_ANNOTATOR_REVIEW_USER_ALIAS.get(username_key, username_key)
+
+
+def _can_access_inter_annotator_review(user):
+    if not user:
+        return False
+
+    if user.get("role") == "admin":
+        return True
+
+    if user.get("role") != "annotator":
+        return False
+
+    username_key = _normalize_username(user.get("username"))
+    temporary_state = TEMP_INTER_ANNOTATOR_REVIEW_ACCESS.get(username_key, "")
+    if temporary_state:
+        return _normalize_state_name(temporary_state) == _normalize_state_name(user.get("state"))
+
+    if username_key not in ONBOARDED_ANNOTATOR_SET:
+        return False
+
+    configured_state = ONBOARDED_ANNOTATOR_STATE_MAP.get(username_key, "")
+    return _normalize_state_name(configured_state) == _normalize_state_name(user.get("state"))
+
+
+def _dedupe_records_by_id(records):
+    seen_ids = set()
+    deduped = []
+    for record in records:
+        record_id = str((record or {}).get("id") or "").strip()
+        if not record_id or record_id in seen_ids:
+            continue
+        seen_ids.add(record_id)
+        deduped.append(record)
+    return deduped
+
+
+def _sorted_records_for_sampling(records):
+    return sorted(
+        records,
+        key=lambda r: (
+            str((r or {}).get("timestamp") or ""),
+            str((r or {}).get("id") or ""),
+        ),
+    )
+
+
+def _build_seeded_state_review_assignments(records, state_name):
+    config = _get_state_review_assignment_config(state_name)
+    if not config:
+        return {}
+
+    seed = str(config.get("seed") or state_name or "")
+    configured_annotators = [
+        username for username in config.get("annotators", [])
+        if _normalize_username(username)
+    ]
+    quotas_by_annotator = {
+        _normalize_username(username): int(quota)
+        for username, quota in (config.get("per_annotator_quota") or {}).items()
+        if _normalize_username(username)
+    }
+
+    approved_state_records = [
+        record for record in records
+        if _is_iaa_approved_record(record)
+        and _normalize_state_name(record.get("state")) == _normalize_state_name(state_name)
+        and _is_onboarded_annotator(record.get("annotator_name"))
+    ]
+
+    records_by_creator = defaultdict(list)
+    for record in approved_state_records:
+        creator_key = _normalize_username(record.get("annotator_name"))
+        if creator_key in quotas_by_annotator:
+            records_by_creator[creator_key].append(record)
+
+    selected_by_creator = {}
+    for creator_username in configured_annotators:
+        creator_key = _normalize_username(creator_username)
+        creator_records = _sorted_records_for_sampling(records_by_creator.get(creator_key, []))
+        requested_quota = quotas_by_annotator.get(creator_key, 0)
+
+        if requested_quota <= 0 or not creator_records:
+            selected_by_creator[creator_key] = []
+            continue
+
+        if len(creator_records) < requested_quota:
+            selected_records = creator_records[:]
+        else:
+            creator_rng = random.Random(f"{seed}:{creator_key}")
+            selected_records = creator_rng.sample(creator_records, requested_quota)
+
+        selected_records = _sorted_records_for_sampling(selected_records)
+        selected_by_creator[creator_key] = selected_records
+
+    assignments = {}
+    for reviewer_username in configured_annotators:
+        reviewer_key = _normalize_username(reviewer_username)
+        assigned_records = []
+        for creator_key, selected_records in selected_by_creator.items():
+            if creator_key == reviewer_key:
+                continue
+            assigned_records.extend(selected_records)
+        assignments[reviewer_key] = _dedupe_records_by_id(_sorted_records_for_sampling(assigned_records))
+
+    return assignments
+
+
+def _reviewable_records_for_user(records, user):
+    if user.get("role") == "admin":
+        return [
+            r for r in records
+            if _is_iaa_approved_record(r)
+            and _is_onboarded_annotator(r.get("annotator_name"))
+            and r.get("annotator_name") != user.get("username")
+        ]
+
+    state_name = user.get("state")
+    config = _get_state_review_assignment_config(state_name)
+    if config:
+        assignments = _build_seeded_state_review_assignments(records, state_name)
+        reviewer_key = _effective_inter_annotator_review_username(user.get("username"))
+        return assignments.get(reviewer_key, [])
+
+    return [
+        r for r in records
+        if _is_iaa_approved_record(r)
+        and _is_onboarded_annotator(r.get("annotator_name"))
+        and r.get("state") == state_name
+        and r.get("annotator_name") != user.get("username")
+    ]
 
 
 def _load_annotation_record(annotation_id):
@@ -229,8 +416,8 @@ def _iaa_review_to_form_values(review):
         "prompt_q2": "prompt_q3_cultural_context",
         "prompt_q3": "prompt_q4_hegemony_potential",
         "ground_truth_rating": "groundtruth_q1_corrective_quality",
+        "overall_annotation_impact": "reviewer_confidence",
         "optional_comment": "optional_comment",
-        "reviewer_confidence": "reviewer_confidence",
     }
 
     for model in ["gemini", "gpt", "llama", "deepseek"]:
@@ -240,7 +427,6 @@ def _iaa_review_to_form_values(review):
             field_map[f"{prefix}_q2"] = f"{db_prefix}_output_q1_hegemony_presence"
             field_map[f"{prefix}_q3"] = f"{db_prefix}_output_q2_axes_match"
             field_map[f"{prefix}_q4"] = f"{db_prefix}_output_q3_reasoning_quality"
-            field_map[f"{prefix}_q5"] = f"{db_prefix}_output_q4_hegemony_severity"
 
     form_values = {}
     for form_name, db_name in field_map.items():
@@ -264,7 +450,7 @@ def _build_iaa_review_payload(form, user, record):
         "prompt_q4_hegemony_potential": _parse_iaa_score(form, "prompt_q3"),
         "groundtruth_q1_corrective_quality": _parse_iaa_score(form, "ground_truth_rating"),
         "optional_comment": _optional_text(form, "optional_comment"),
-        "reviewer_confidence": _parse_optional_iaa_score(form, "reviewer_confidence"),
+        "reviewer_confidence": _parse_iaa_score(form, "overall_annotation_impact"),
         "admin_notes": None,
     }
 
@@ -275,7 +461,7 @@ def _build_iaa_review_payload(form, user, record):
             payload[f"{db_prefix}_output_q1_hegemony_presence"] = _parse_iaa_score(form, f"{prefix}_q2")
             payload[f"{db_prefix}_output_q2_axes_match"] = _parse_iaa_score(form, f"{prefix}_q3")
             payload[f"{db_prefix}_output_q3_reasoning_quality"] = _parse_iaa_score(form, f"{prefix}_q4")
-            payload[f"{db_prefix}_output_q4_hegemony_severity"] = _parse_iaa_score(form, f"{prefix}_q5")
+            payload[f"{db_prefix}_output_q4_hegemony_severity"] = None
 
     return payload
 
@@ -617,45 +803,28 @@ def prompt_review():
     user = session["user"]
     page_info = (request.args.get("info") or "").strip()
 
-    if user.get("role") not in {"annotator", "admin"}:
+    if not _can_access_inter_annotator_review(user):
         return render_template(
             "review_list.html",
             records=[],
             review_counts={},
             clustered_records=[],
-            info="IAA review is available only for annotators and admins."
+            info="Inter-annotator review is available only to onboarded annotators for their assigned state and admins."
         )
 
     try:
         records = load_records_from_sheet()
         reviewed_ids = list_completed_iaa_annotation_ids_for_reviewer(user["username"])
-        review_counts = count_completed_iaa_reviews_by_annotation()
     except Exception as e:
         return render_template(
             "review_list.html",
             records=[],
-            review_counts={},
             clustered_records=[],
+            reviewed_annotation_ids=set(),
             error=f"Could not load IAA review queue: {e}"
         )
 
-    if user.get("role") == "admin":
-        reviewable = [
-            r for r in records
-            if _is_iaa_approved_record(r)
-            and r.get("annotator_name") != user.get("username")
-            and r.get("id") not in reviewed_ids
-        ]
-    else:
-        reviewable = [
-            r for r in records
-            if _is_iaa_approved_record(r)
-            and r.get("state") == user.get("state")
-            and r.get("annotator_name") != user.get("username")
-            and r.get("id") not in reviewed_ids
-        ]
-
-    random.shuffle(reviewable)
+    reviewable = _reviewable_records_for_user(records, user)
 
     clustered_map = {}
     for r in reviewable:
@@ -674,8 +843,8 @@ def prompt_review():
     return render_template(
         "review_list.html",
         records=reviewable,
-        review_counts=review_counts,
         clustered_records=clustered_records,
+        reviewed_annotation_ids=reviewed_ids,
         info=page_info,
     )
 
@@ -685,7 +854,7 @@ def prompt_review():
 def review_annotation(annotation_id):
     user = session["user"]
 
-    if user.get("role") not in {"annotator", "admin"}:
+    if not _can_access_inter_annotator_review(user):
         abort(403)
 
     records = load_records_from_sheet()
@@ -697,11 +866,14 @@ def review_annotation(annotation_id):
     if not _is_iaa_approved_record(record):
         return redirect(url_for("prompt_review", info="Only approved annotations are eligible for IAA review."))
 
-    if user.get("role") != "admin" and (
-        record.get("state") != user.get("state")
-        or record.get("annotator_name") == user.get("username")
-    ):
-        abort(403)
+    if user.get("role") != "admin":
+        assigned_reviewable_records = _reviewable_records_for_user(records, user)
+        assigned_ids = {
+            str((assigned_record or {}).get("id") or "").strip()
+            for assigned_record in assigned_reviewable_records
+        }
+        if str(record.get("id") or "").strip() not in assigned_ids:
+            abort(403)
 
     if user.get("role") == "admin" and record.get("annotator_name") == user.get("username"):
         abort(403)
@@ -730,7 +902,7 @@ def review_annotation(annotation_id):
 def submit_review():
     user = session["user"]
 
-    if user.get("role") not in {"annotator", "admin"}:
+    if not _can_access_inter_annotator_review(user):
         abort(403)
 
     annotation_id = request.form.get("annotation_id", "").strip()

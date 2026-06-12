@@ -7,6 +7,13 @@
     table-layout: fixed;
   }
 
+  .load-table th {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+  }
+
   .load-table td {
     padding-top: 0.9rem;
     padding-bottom: 0.9rem;
@@ -35,19 +42,18 @@
     font-weight: 600;
   }
 
-  .load-table .reviewed-by-col,
-  .load-table .reviewed-by-cell {
-    width: 3.25rem;
+  .load-table .addressed-col,
+  .load-table .addressed-cell {
+    width: 5.75rem;
     text-align: center;
-    white-space: nowrap;
   }
 
-  .load-table .reviewed-by-col {
+  .load-table .addressed-col {
     padding-left: 0.35rem;
     padding-right: 0.35rem;
   }
 
-  .load-table .reviewed-by-cell {
+  .load-table .addressed-cell {
     padding-left: 0.35rem;
     padding-right: 0.35rem;
   }
@@ -169,14 +175,14 @@
           <table class="table is-fullwidth is-hoverable is-zebra-neutral load-table">
             <thead>
               <tr>
-                <th width="8%">Sr. No.</th>
-                <th width="16%">ID</th>
-                <th width="12%">State</th>
-                <th width="12%">Status</th>
+                <th width="7%">Sr. No.</th>
+                <th width="14%">ID</th>
+                <th width="10%">State</th>
+                <th width="10%">Status</th>
                 <th>Base Prompt</th>
-                <th width="26%">Comments</th>
-                <th width="10%"></th>
-                <th class="reviewed-by-col">Reviewed By</th>
+                <th width="22%">Comments</th>
+                <th width="8%"></th>
+                <th class="addressed-col">Addressed</th>
               </tr>
             </thead>
             <tbody>
@@ -221,8 +227,16 @@
                   </form>
                 </td>
 
-                <td class="reviewed-by-cell">
-                  <span class="has-text-success has-text-weight-semibold">{{ reviewed_by }}</span>
+                <td class="addressed-cell">
+                  {% if r._acceptance_status == "needs_restructuring" %}
+                    {% if r._annotator_addressed_status == "yes" %}
+                      <span class="has-text-success has-text-weight-semibold">Yes</span>
+                    {% else %}
+                      <span class="has-text-warning-dark has-text-weight-semibold">Pending</span>
+                    {% endif %}
+                  {% else %}
+                    <span class="has-text-grey-light">—</span>
+                  {% endif %}
                 </td>
               </tr>
               {% endfor %}

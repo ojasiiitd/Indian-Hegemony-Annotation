@@ -10,11 +10,18 @@
   }
 
   .admin-query-table {
-  table-layout: fixed;
-}
+    table-layout: fixed;
+  }
+
+  .admin-query-table th {
+    font-size: 0.9rem;
+    line-height: 1.2;
+    white-space: normal;
+    word-break: break-word;
+  }
   .admin-query-table .prompt-preview {
-  -webkit-line-clamp: 10; /* instead of 8 */
-}
+    -webkit-line-clamp: 10; /* instead of 8 */
+  }
 
   .admin-query-table .prompt-preview {
     max-height: 220px;
@@ -117,7 +124,6 @@
   .admin-query-table .addressed-cell {
     text-align: center;
     vertical-align: middle;
-    white-space: nowrap;
   }
 
   .admin-query-table .addressed-pill {
@@ -388,16 +394,16 @@
           <table class="table is-fullwidth is-hoverable is-zebra-neutral admin-query-table">
             <thead>
               <tr>
-                <th width="8%">Sr. No.</th>
-                <th width="10%">Date</th>
-                <th width="12%">State</th>
-                <th width="10%">Annotator</th> <!-- reduced -->
-                <th width="11%">Status</th>     <!-- reduced -->
-                <th width="23%">Base Prompt</th> <!-- increased -->
-                <th width="8%"></th>
+                <th width="7%">Sr. No.</th>
+                <th width="9%">Date</th>
+                <th width="10%">State</th>
+                <th width="9%">Annotator</th>
+                <th width="10%">Status</th>
+                <th width="22%">Base Prompt</th>
+                <th width="7%"></th>
                 <th width="10%">Validated</th>
-                <th width="8%">Acceptable</th>
-                <th width="12%">Addressed</th>
+                <th width="7%">Acceptable</th>
+                <th width="9%">Addressed</th>
               </tr>
             </thead>
             <tbody>

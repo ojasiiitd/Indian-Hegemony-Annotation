@@ -25,13 +25,11 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Ajit Rana",
 	"Priyanka",
 	"Riddhi157",
-	"tauseefqamar007",
 	"tauseef",
 	"Aishwarya Gadgil",
 	"Ashish",
 	"Manshi Patel",
 	"Veera Hymavathi Sirisipalli",
-	"Sylesh",
 	"Subham48",
 	"Lila Ghimire",
 	"neerav",
@@ -39,6 +37,28 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Adya",
 	"kameshwari04",
 ]
+
+ONBOARDED_ANNOTATOR_USERNAMES_STATES = {
+	"admin": "Uttar Pradesh",
+	"Arnab6203": "West Bengal",
+	"nishtharajput": "Haryana",
+	"Manasikelkar26": "Maharashtra",
+	"Riddhi Vora": "Gujarat",
+	"Ajit Rana": "Haryana",
+	"Priyanka": "Haryana",
+	"Riddhi157": "Maharashtra",
+	"tauseef": "Bihar",
+	"Aishwarya Gadgil": "Maharashtra",
+	"Ashish": "Jammu and Kashmir",
+	"Manshi Patel": "Uttar Pradesh",
+	"Veera Hymavathi Sirisipalli": "Andhra Pradesh",
+	"Subham48": "West Bengal",
+	"Lila Ghimire": "West Bengal",
+	"neerav": "Uttar Pradesh",
+	"Sohail Khan": "Jammu and Kashmir",
+	"Adya": "Kerala",
+	"kameshwari04": "Bihar",
+}
 
 HEGEMONY_AXES = [
 	"social",
