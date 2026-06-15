@@ -30,6 +30,7 @@ from iaa_store import (
     fetch_iaa_review,
     initialize_iaa_storage,
     list_completed_iaa_annotation_ids_for_reviewer,
+    list_completed_iaa_review_counts_by_state_and_reviewer,
     list_iaa_reviews_for_export,
     save_iaa_review,
 )
@@ -1331,6 +1332,34 @@ def admin_dashboard_stats():
     return jsonify({
         "data_source": data_source,
         **stats,
+    })
+
+
+@app.route("/admin/inter-annotator-review-stats")
+@admin_required
+def admin_inter_annotator_review_stats():
+    try:
+        reviewer_rows = list_completed_iaa_review_counts_by_state_and_reviewer()
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+    state_groups = []
+    grouped_rows = defaultdict(list)
+    for row in reviewer_rows:
+        state_name = (row.get("reviewer_state") or "Unknown").strip() or "Unknown"
+        grouped_rows[state_name].append({
+            "reviewer_name": (row.get("reviewer_name") or "Unknown").strip() or "Unknown",
+            "completed_review_count": int(row.get("completed_review_count") or 0),
+        })
+
+    for state_name in sorted(grouped_rows.keys(), key=lambda value: value.casefold()):
+        state_groups.append({
+            "state": state_name,
+            "reviewers": grouped_rows[state_name],
+        })
+
+    return jsonify({
+        "state_groups": state_groups,
     })
 
 

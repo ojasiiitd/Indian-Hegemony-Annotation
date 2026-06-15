@@ -204,6 +204,30 @@
     padding: 1.1rem 1.15rem;
   }
 
+  .iaa-review-stats-shell {
+    display: grid;
+    gap: 1rem;
+  }
+
+  .iaa-review-state-card {
+    border: 1px solid #d8e7fb;
+    border-radius: 16px;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    padding: 1rem 1.05rem;
+  }
+
+  .iaa-review-state-title {
+    color: #244368;
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+  }
+
+  .iaa-review-state-card table th,
+  .iaa-review-state-card table td {
+    vertical-align: middle;
+  }
+
   .admin-dashboard-header {
     display: flex;
     align-items: flex-start;
@@ -287,6 +311,28 @@
         <div id="adminDashboardStats" class="admin-stats-placeholder">
           <p class="has-text-weight-semibold mb-2">Dashboard stats are not loaded yet.</p>
           <p class="has-text-grey mb-0">Use the button above to fetch the summary cards and progress visualizations dynamically.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mb-5">
+      <div class="card-content">
+        <div class="admin-dashboard-header mb-3">
+          <div class="admin-dashboard-header-copy">
+            <h2 class="title is-5 mb-1">Inter-Annotator Review Stats</h2>
+          </div>
+          <div class="admin-dashboard-header-actions">
+            <button id="loadIaaReviewStatsBtn"
+                    class="button is-info is-light"
+                    type="button"
+                    data-url="{{ url_for('admin_inter_annotator_review_stats') }}">
+              Load Inter-Annotator Review Stats
+            </button>
+          </div>
+        </div>
+        <div id="adminIaaReviewStats" class="admin-stats-placeholder">
+          <p class="has-text-weight-semibold mb-2">Inter-annotator review stats are not loaded yet.</p>
+          <p class="has-text-grey mb-0">Use the button above to fetch the state-wise reviewer completion counts dynamically.</p>
         </div>
       </div>
     </div>
@@ -508,6 +554,8 @@
 <script>
   const dashboardStatsContainer = document.getElementById("adminDashboardStats");
   const loadDashboardStatsBtn = document.getElementById("loadDashboardStatsBtn");
+  const iaaReviewStatsContainer = document.getElementById("adminIaaReviewStats");
+  const loadIaaReviewStatsBtn = document.getElementById("loadIaaReviewStatsBtn");
   let adminDashboardCharts = [];
   const statePalette = [
     "#4F46E5", "#0EA5E9", "#22C55E", "#F59E0B", "#EF4444",
@@ -693,6 +741,42 @@
     buildDailyProgressChart(dailyProgress);
   }
 
+  function renderIaaReviewStats(data) {
+    const stateGroups = data.state_groups || [];
+    if (!iaaReviewStatsContainer) return;
+
+    if (!stateGroups.length) {
+      iaaReviewStatsContainer.innerHTML = "<p class='has-text-grey mb-0'>No completed inter-annotator reviews found yet.</p>";
+      return;
+    }
+
+    iaaReviewStatsContainer.innerHTML = `
+      <div class="iaa-review-stats-shell">
+        ${stateGroups.map((group) => `
+          <div class="iaa-review-state-card">
+            <h3 class="iaa-review-state-title">${group.state}</h3>
+            <table class="table is-fullwidth is-hoverable is-zebra-neutral mb-0">
+              <thead>
+                <tr>
+                  <th>Annotator Name</th>
+                  <th width="24%">Reviews Completed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${group.reviewers.map((reviewer) => `
+                  <tr>
+                    <td>${reviewer.reviewer_name}</td>
+                    <td><span class="has-text-weight-semibold">${reviewer.completed_review_count}</span></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `).join("")}
+      </div>
+    `;
+  }
+
   async function loadAdminDashboardStats() {
     const targetUrl = loadDashboardStatsBtn?.dataset.url;
     if (!targetUrl || !dashboardStatsContainer) return;
@@ -715,8 +799,34 @@
     }
   }
 
+  async function loadAdminIaaReviewStats() {
+    const targetUrl = loadIaaReviewStatsBtn?.dataset.url;
+    if (!targetUrl || !iaaReviewStatsContainer) return;
+    loadIaaReviewStatsBtn.disabled = true;
+    loadIaaReviewStatsBtn.classList.add("is-loading");
+    iaaReviewStatsContainer.innerHTML = "<p class='has-text-grey'>Loading inter-annotator review stats…</p>";
+    try {
+      const response = await fetch(targetUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } });
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      const data = await response.json();
+      renderIaaReviewStats(data);
+      loadIaaReviewStatsBtn.textContent = "Reload Inter-Annotator Review Stats";
+    } catch (error) {
+      iaaReviewStatsContainer.innerHTML = `<div class="notification is-warning is-light mb-0">Could not load inter-annotator review stats: ${error.message}</div>`;
+    } finally {
+      loadIaaReviewStatsBtn.disabled = false;
+      loadIaaReviewStatsBtn.classList.remove("is-loading");
+    }
+  }
+
   if (loadDashboardStatsBtn) {
     loadDashboardStatsBtn.addEventListener("click", loadAdminDashboardStats);
+  }
+
+  if (loadIaaReviewStatsBtn) {
+    loadIaaReviewStatsBtn.addEventListener("click", loadAdminIaaReviewStats);
   }
 </script>
 {% endblock %}

@@ -6,6 +6,7 @@ from config import BASE_DIR
 
 IAA_DB_PATH = Path(BASE_DIR) / "data" / "iaa_reviews.db"
 
+# for pythonanywhere
 PROMPT_FIELDS = [
     "prompt_q1_clarity_format",
     "prompt_q2_identity_relevance",
@@ -157,6 +158,25 @@ def count_completed_iaa_reviews_by_annotation():
         for row in rows
         if str(row["annotation_id"]).strip()
     }
+
+
+def list_completed_iaa_review_counts_by_state_and_reviewer():
+    with _connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                COALESCE(NULLIF(TRIM(reviewer_state), ''), 'Unknown') AS reviewer_state,
+                COALESCE(NULLIF(TRIM(reviewer_name), ''), 'Unknown') AS reviewer_name,
+                COUNT(*) AS completed_review_count
+            FROM iaa_reviews
+            WHERE completed = 1
+            GROUP BY reviewer_state, reviewer_name
+            ORDER BY reviewer_state COLLATE NOCASE ASC,
+                     completed_review_count DESC,
+                     reviewer_name COLLATE NOCASE ASC
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
 
 
 def save_iaa_review(payload):
