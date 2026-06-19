@@ -1,5 +1,5 @@
 # app.py
-from flask import Flask, render_template, request, redirect, jsonify, url_for, abort, Response
+from flask import Flask, render_template, request, redirect, jsonify, url_for, abort, Response, send_from_directory
 from storage import *
 from sheets import *
 from flask import session
@@ -55,6 +55,8 @@ EXAMPLE_ANNOTATION_IDS = [
     "5a83933e-74fb-422b-ab62-ec1c4e0bb8c0",
     "51147a23-93a1-4f92-9629-6e7e91ed497e",
 ]
+
+IAR_GUIDELINES_FILENAME = "Inter-Annotator-Review-Guidelines.pdf"
 
 
 def _normalize_username(value):
@@ -178,6 +180,12 @@ def admin_required(f):
             abort(403)
         return f(*args, **kwargs)
     return wrapper
+
+
+@app.route("/inter-annotator-review-guidelines.pdf")
+@login_required
+def inter_annotator_review_guidelines_pdf():
+    return send_from_directory(BASE_DIR / "static", IAR_GUIDELINES_FILENAME)
 
 
 def _safe_upsert_prompt_embedding(record):
@@ -521,27 +529,57 @@ def _parse_optional_iaa_score(form, field_name):
     return None
 
 
+def _required_text(form, field_name):
+    value = str(form.get(field_name, "") or "").strip()
+    if not value:
+        raise ValueError(f"Missing required text for {field_name}.")
+    return value
+
+
+MODEL_REVIEW_FIELD_PREFIXES = {
+    "gemini_base": "model1_base",
+    "gemini_identity": "model1_identity",
+    "gpt_base": "model2_base",
+    "gpt_identity": "model2_identity",
+    "llama_base": "model3_base",
+    "llama_identity": "model3_identity",
+    "deepseek_base": "model4_base",
+    "deepseek_identity": "model4_identity",
+}
+
+
 def _iaa_review_to_form_values(review):
     if not review:
         return {}
 
     field_map = {
-        "prompt_q0": "prompt_q1_clarity_format",
-        "prompt_q1": "prompt_q2_identity_relevance",
-        "prompt_q2": "prompt_q3_cultural_context",
-        "prompt_q3": "prompt_q4_hegemony_potential",
-        "ground_truth_rating": "groundtruth_q1_corrective_quality",
-        "overall_annotation_impact": "reviewer_confidence",
+        "prompt_q0": "prompt_q1",
+        "prompt_q1": "prompt_q2",
+        "prompt_q2": "prompt_q3",
+        "prompt_q3": "prompt_q4",
+        "prompt_q0_comment": "prompt_q1_comment",
+        "prompt_q1_comment": "prompt_q2_comment",
+        "prompt_q2_comment": "prompt_q3_comment",
+        "prompt_q3_comment": "prompt_q4_comment",
+        "ground_truth_rating": "ground_truth_q1",
+        "ground_truth_rating_comment": "ground_truth_q1_comment",
+        "overall_annotation_impact": "full_annotation_q1",
+        "overall_annotation_impact_comment": "full_annotation_q1_comment",
+        "reviewer_confidence": "full_annotation_q2",
+        "reviewer_confidence_comment": "full_annotation_q2_comment",
         "optional_comment": "optional_comment",
     }
 
     for model in ["gemini", "gpt", "llama", "deepseek"]:
         for prompt_type in ["base", "identity"]:
             prefix = f"{model}_{prompt_type}"
-            db_prefix = f"{model}_{prompt_type}"
-            field_map[f"{prefix}_q2"] = f"{db_prefix}_output_q1_hegemony_presence"
-            field_map[f"{prefix}_q3"] = f"{db_prefix}_output_q2_axes_match"
-            field_map[f"{prefix}_q4"] = f"{db_prefix}_output_q3_reasoning_quality"
+            db_prefix = MODEL_REVIEW_FIELD_PREFIXES[prefix]
+            field_map[f"{prefix}_q2"] = f"{db_prefix}_q1"
+            field_map[f"{prefix}_q3"] = f"{db_prefix}_q2"
+            field_map[f"{prefix}_q4"] = f"{db_prefix}_q3"
+            field_map[f"{prefix}_q2_comment"] = f"{db_prefix}_q1_comment"
+            field_map[f"{prefix}_q3_comment"] = f"{db_prefix}_q2_comment"
+            field_map[f"{prefix}_q4_comment"] = f"{db_prefix}_q3_comment"
 
     form_values = {}
     for form_name, db_name in field_map.items():
@@ -559,24 +597,34 @@ def _build_iaa_review_payload(form, user, record):
         "review_timestamp": datetime.utcnow().isoformat(),
         "editable": 0,
         "completed": 1,
-        "prompt_q1_clarity_format": _parse_iaa_score(form, "prompt_q0"),
-        "prompt_q2_identity_relevance": _parse_iaa_score(form, "prompt_q1"),
-        "prompt_q3_cultural_context": _parse_iaa_score(form, "prompt_q2"),
-        "prompt_q4_hegemony_potential": _parse_iaa_score(form, "prompt_q3"),
-        "groundtruth_q1_corrective_quality": _parse_iaa_score(form, "ground_truth_rating"),
+        "prompt_q1": _parse_iaa_score(form, "prompt_q0"),
+        "prompt_q2": _parse_iaa_score(form, "prompt_q1"),
+        "prompt_q3": _parse_iaa_score(form, "prompt_q2"),
+        "prompt_q4": _parse_iaa_score(form, "prompt_q3"),
+        "prompt_q1_comment": _optional_text(form, "prompt_q0_comment"),
+        "prompt_q2_comment": _optional_text(form, "prompt_q1_comment"),
+        "prompt_q3_comment": _required_text(form, "prompt_q2_comment"),
+        "prompt_q4_comment": _optional_text(form, "prompt_q3_comment"),
+        "ground_truth_q1": _parse_iaa_score(form, "ground_truth_rating"),
+        "ground_truth_q1_comment": _optional_text(form, "ground_truth_rating_comment"),
+        "full_annotation_q1": _parse_iaa_score(form, "overall_annotation_impact"),
+        "full_annotation_q1_comment": _required_text(form, "overall_annotation_impact_comment"),
         "optional_comment": _optional_text(form, "optional_comment"),
-        "reviewer_confidence": _parse_iaa_score(form, "overall_annotation_impact"),
+        "full_annotation_q2": _parse_iaa_score(form, "reviewer_confidence"),
+        "full_annotation_q2_comment": _optional_text(form, "reviewer_confidence_comment"),
         "admin_notes": None,
     }
 
     for model in ["gemini", "gpt", "llama", "deepseek"]:
         for prompt_type in ["base", "identity"]:
             prefix = f"{model}_{prompt_type}"
-            db_prefix = f"{model}_{prompt_type}"
-            payload[f"{db_prefix}_output_q1_hegemony_presence"] = _parse_iaa_score(form, f"{prefix}_q2")
-            payload[f"{db_prefix}_output_q2_axes_match"] = _parse_iaa_score(form, f"{prefix}_q3")
-            payload[f"{db_prefix}_output_q3_reasoning_quality"] = _parse_iaa_score(form, f"{prefix}_q4")
-            payload[f"{db_prefix}_output_q4_hegemony_severity"] = None
+            db_prefix = MODEL_REVIEW_FIELD_PREFIXES[prefix]
+            payload[f"{db_prefix}_q1"] = _parse_iaa_score(form, f"{prefix}_q2")
+            payload[f"{db_prefix}_q2"] = _parse_iaa_score(form, f"{prefix}_q3")
+            payload[f"{db_prefix}_q3"] = _parse_iaa_score(form, f"{prefix}_q4")
+            payload[f"{db_prefix}_q1_comment"] = _required_text(form, f"{prefix}_q2_comment")
+            payload[f"{db_prefix}_q2_comment"] = _required_text(form, f"{prefix}_q3_comment")
+            payload[f"{db_prefix}_q3_comment"] = _required_text(form, f"{prefix}_q4_comment")
 
     return payload
 
@@ -991,7 +1039,7 @@ def review_annotation(annotation_id):
 
     existing_review = fetch_iaa_review(annotation_id, user["username"])
     if existing_review and existing_review.get("completed") and not existing_review.get("editable"):
-        return redirect(url_for("prompt_review", info="You have already submitted an IAA review for this annotation."))
+        return redirect(url_for("prompt_review", info="You have already reviewed this annotation"))
 
     models = [
         ("gemini", "Model 1"),
@@ -1045,7 +1093,7 @@ def submit_review():
     except ValueError:
         abort(400)
 
-    return redirect(url_for("prompt_review", info="IAA review submitted."))
+    return redirect(url_for("prompt_review", info="Review Submitted"))
 
 
 @app.route("/freshannotate")

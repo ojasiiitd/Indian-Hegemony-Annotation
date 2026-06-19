@@ -5,64 +5,79 @@ from config import BASE_DIR
 
 
 IAA_DB_PATH = Path(BASE_DIR) / "data" / "iaa_reviews.db"
-
 # for pythonanywhere
-PROMPT_FIELDS = [
-    "prompt_q1_clarity_format",
-    "prompt_q2_identity_relevance",
-    "prompt_q3_cultural_context",
-    "prompt_q4_hegemony_potential",
+MODEL_OUTPUT_TARGETS = [
+    "model1_base",
+    "model1_identity",
+    "model2_base",
+    "model2_identity",
+    "model3_base",
+    "model3_identity",
+    "model4_base",
+    "model4_identity",
 ]
 
-OUTPUT_FIELD_SUFFIXES = [
-    "output_q1_hegemony_presence",
-    "output_q2_axes_match",
-    "output_q3_reasoning_quality",
-    "output_q4_hegemony_severity",
+IAA_REVIEW_COLUMNS = [
+    "annotation_id",
+    "reviewer_name",
+    "reviewer_state",
+    "annotation_creator",
+    "review_timestamp",
+    "editable",
+    "completed",
+    "prompt_q1",
+    "prompt_q1_comment",
+    "prompt_q2",
+    "prompt_q2_comment",
+    "prompt_q3",
+    "prompt_q3_comment",
+    "prompt_q4",
+    "prompt_q4_comment",
 ]
 
-OUTPUT_TARGETS = [
-    "gemini_base",
-    "gemini_identity",
-    "gpt_base",
-    "gpt_identity",
-    "llama_base",
-    "llama_identity",
-    "deepseek_base",
-    "deepseek_identity",
-]
+for target in MODEL_OUTPUT_TARGETS:
+    IAA_REVIEW_COLUMNS.extend([
+        f"{target}_q1",
+        f"{target}_q1_comment",
+        f"{target}_q2",
+        f"{target}_q2_comment",
+        f"{target}_q3",
+        f"{target}_q3_comment",
+    ])
 
-OUTPUT_FIELDS = [
-    f"{target}_{suffix}"
-    for target in OUTPUT_TARGETS
-    for suffix in OUTPUT_FIELD_SUFFIXES
-]
-
-GROUND_TRUTH_FIELDS = [
-    "groundtruth_q1_corrective_quality",
-]
-
-OPTIONAL_FIELDS = [
+IAA_REVIEW_COLUMNS.extend([
+    "ground_truth_q1",
+    "ground_truth_q1_comment",
+    "full_annotation_q1",
+    "full_annotation_q1_comment",
+    "full_annotation_q2",
+    "full_annotation_q2_comment",
     "optional_comment",
-    "reviewer_confidence",
     "admin_notes",
-]
+])
 
-IAA_REVIEW_COLUMNS = (
-    [
-        "annotation_id",
-        "reviewer_name",
-        "reviewer_state",
-        "annotation_creator",
-        "review_timestamp",
-        "editable",
-        "completed",
-    ]
-    + PROMPT_FIELDS
-    + OUTPUT_FIELDS
-    + GROUND_TRUTH_FIELDS
-    + OPTIONAL_FIELDS
-)
+INTEGER_COLUMNS = {
+    "editable",
+    "completed",
+    "prompt_q1",
+    "prompt_q2",
+    "prompt_q3",
+    "prompt_q4",
+    "ground_truth_q1",
+    "full_annotation_q1",
+    "full_annotation_q2",
+}
+
+for target in MODEL_OUTPUT_TARGETS:
+    INTEGER_COLUMNS.update({
+        f"{target}_q1",
+        f"{target}_q2",
+        f"{target}_q3",
+    })
+
+
+def _column_type(column_name):
+    return "INTEGER" if column_name in INTEGER_COLUMNS else "TEXT"
 
 
 def _connect():
@@ -74,8 +89,18 @@ def _connect():
 
 
 def _ensure_schema(conn):
-    question_columns = ",\n        ".join(
-        [f"{column} INTEGER" for column in (PROMPT_FIELDS + OUTPUT_FIELDS + GROUND_TRUTH_FIELDS)]
+    column_definitions = ",\n            ".join(
+        f"{column} {_column_type(column)}"
+        for column in IAA_REVIEW_COLUMNS
+        if column not in {
+            "annotation_id",
+            "reviewer_name",
+            "reviewer_state",
+            "annotation_creator",
+            "review_timestamp",
+            "editable",
+            "completed",
+        }
     )
     conn.execute(
         f"""
@@ -88,10 +113,7 @@ def _ensure_schema(conn):
             review_timestamp TEXT,
             editable INTEGER NOT NULL DEFAULT 1,
             completed INTEGER NOT NULL DEFAULT 0,
-            {question_columns},
-            optional_comment TEXT,
-            reviewer_confidence INTEGER,
-            admin_notes TEXT,
+            {column_definitions},
             UNIQUE(annotation_id, reviewer_name)
         )
         """
@@ -100,10 +122,10 @@ def _ensure_schema(conn):
         row["name"]
         for row in conn.execute("PRAGMA table_info(iaa_reviews)").fetchall()
     }
-    for column in PROMPT_FIELDS + OUTPUT_FIELDS + GROUND_TRUTH_FIELDS + OPTIONAL_FIELDS:
-        if column not in existing_columns:
-            column_type = "TEXT" if column in {"optional_comment", "admin_notes"} else "INTEGER"
-            conn.execute(f"ALTER TABLE iaa_reviews ADD COLUMN {column} {column_type}")
+    for column in IAA_REVIEW_COLUMNS:
+        if column in existing_columns:
+            continue
+        conn.execute(f"ALTER TABLE iaa_reviews ADD COLUMN {column} {_column_type(column)}")
     conn.commit()
 
 
