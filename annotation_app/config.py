@@ -36,6 +36,9 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Sohail Khan",
 	"Adya",
 	"kameshwari04",
+	"Manorath Thacker",
+	"Payal",
+	"hareeshreji",
 ]
 
 ONBOARDED_ANNOTATOR_USERNAMES_STATES = {
@@ -58,6 +61,9 @@ ONBOARDED_ANNOTATOR_USERNAMES_STATES = {
 	"Sohail Khan": "Jammu and Kashmir",
 	"Adya": "Kerala",
 	"kameshwari04": "Bihar",
+	"Manorath Thacker": "Gujarat",
+	"Payal": "Odisha",
+	"hareeshreji": "Kerala",
 }
 
 HEGEMONY_AXES = [
