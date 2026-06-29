@@ -57,6 +57,7 @@ EXAMPLE_ANNOTATION_IDS = [
 ]
 
 IAR_GUIDELINES_FILENAME = "Inter-Annotator-Review-Guidelines.pdf"
+IAR_ASSIGNMENTS_FILENAME = "inter_annotator_review_assignments.json"
 
 
 def _normalize_username(value):
@@ -104,6 +105,17 @@ STATE_REVIEW_ASSIGNMENT_CONFIGS = {
         "per_annotator_quota": {
             "Ashish": 15,
             "Sohail Khan": 15,
+        },
+    },
+    "bihar": {
+        "seed": "iaa-bihar-v1",
+        "annotators": [
+            "tauseef",
+            "kameshwari04",
+        ],
+        "per_annotator_quota": {
+            "tauseef": 15,
+            "kameshwari04": 15,
         },
     },
     "west bengal": {
@@ -212,6 +224,113 @@ def _normalize_state_name(value):
 
 def _get_state_review_assignment_config(state_name):
     return STATE_REVIEW_ASSIGNMENT_CONFIGS.get(_normalize_state_name(state_name))
+
+
+def _iar_assignments_file_path():
+    return BASE_DIR / IAR_ASSIGNMENTS_FILENAME
+
+
+def _load_persisted_iar_assignments():
+    assignments_path = _iar_assignments_file_path()
+    if not assignments_path.exists():
+        return {}
+
+    try:
+        with assignments_path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+    return data if isinstance(data, dict) else {}
+
+
+def _save_persisted_iar_assignments(assignments):
+    assignments_path = _iar_assignments_file_path()
+    assignments_path.parent.mkdir(parents=True, exist_ok=True)
+    with assignments_path.open("w", encoding="utf-8") as f:
+        json.dump(assignments, f, ensure_ascii=False, indent=2)
+
+
+def _normalize_persisted_state_assignment(state_assignment):
+    if not isinstance(state_assignment, dict):
+        return None
+
+    selected_ids = [
+        str(annotation_id).strip()
+        for annotation_id in state_assignment.get("selected_annotation_ids", [])
+        if str(annotation_id).strip()
+    ]
+
+    assignments_by_reviewer = {}
+    for reviewer_name, annotation_ids in (state_assignment.get("assignments_by_reviewer") or {}).items():
+        reviewer_key = _normalize_username(reviewer_name)
+        if not reviewer_key:
+            continue
+        assignments_by_reviewer[reviewer_key] = [
+            str(annotation_id).strip()
+            for annotation_id in annotation_ids
+            if str(annotation_id).strip()
+        ]
+
+    return {
+        "selected_annotation_ids": selected_ids,
+        "assignments_by_reviewer": assignments_by_reviewer,
+    }
+
+
+def _record_ids_to_records(records, annotation_ids):
+    records_by_id = {
+        str((record or {}).get("id") or "").strip(): record
+        for record in records
+        if str((record or {}).get("id") or "").strip()
+    }
+    resolved_records = []
+    for annotation_id in annotation_ids:
+        record = records_by_id.get(str(annotation_id).strip())
+        if record:
+            resolved_records.append(record)
+    return _dedupe_records_by_id(resolved_records)
+
+
+def _build_persistable_state_assignment(assignments):
+    selected_annotation_ids = []
+    assignments_by_reviewer = {}
+
+    for reviewer_key, assigned_records in assignments.items():
+        reviewer_ids = []
+        for record in assigned_records:
+            record_id = str((record or {}).get("id") or "").strip()
+            if not record_id:
+                continue
+            reviewer_ids.append(record_id)
+            selected_annotation_ids.append(record_id)
+        assignments_by_reviewer[reviewer_key] = reviewer_ids
+
+    return {
+        "selected_annotation_ids": list(dict.fromkeys(selected_annotation_ids)),
+        "assignments_by_reviewer": assignments_by_reviewer,
+    }
+
+
+def _get_persisted_state_assignment(records, state_name):
+    normalized_state = _normalize_state_name(state_name)
+    if not normalized_state:
+        return None
+
+    all_assignments = _load_persisted_iar_assignments()
+    normalized_assignment = _normalize_persisted_state_assignment(all_assignments.get(normalized_state))
+    if normalized_assignment:
+        return normalized_assignment
+
+    config = _get_state_review_assignment_config(state_name)
+    if not config:
+        return None
+
+    generated_assignments = _build_seeded_state_review_assignments(records, state_name)
+    persistable_assignment = _build_persistable_state_assignment(generated_assignments)
+    all_assignments[normalized_state] = persistable_assignment
+    _save_persisted_iar_assignments(all_assignments)
+    return _normalize_persisted_state_assignment(persistable_assignment)
 
 
 def _is_onboarded_annotator(username):
@@ -406,6 +525,12 @@ def _reviewable_records_for_user(records, user):
         configured_state_names = list(STATE_REVIEW_ASSIGNMENT_CONFIGS.keys())
         admin_records = []
         for state_name in configured_state_names:
+            persisted_assignment = _get_persisted_state_assignment(records, state_name)
+            if persisted_assignment:
+                admin_records.extend(
+                    _record_ids_to_records(records, persisted_assignment.get("selected_annotation_ids", []))
+                )
+                continue
             admin_records.extend(_build_seeded_state_selected_records(records, state_name))
         return [
             r for r in _dedupe_records_by_id(_sorted_records_for_sampling(admin_records))
@@ -415,17 +540,16 @@ def _reviewable_records_for_user(records, user):
     state_name = user.get("state")
     config = _get_state_review_assignment_config(state_name)
     if config:
-        assignments = _build_seeded_state_review_assignments(records, state_name)
+        persisted_assignment = _get_persisted_state_assignment(records, state_name)
         reviewer_key = _effective_inter_annotator_review_username(user.get("username"))
+        if persisted_assignment:
+            assigned_ids = (persisted_assignment.get("assignments_by_reviewer") or {}).get(reviewer_key, [])
+            return _record_ids_to_records(records, assigned_ids)
+
+        assignments = _build_seeded_state_review_assignments(records, state_name)
         return assignments.get(reviewer_key, [])
 
-    return [
-        r for r in records
-        if _is_iaa_approved_record(r)
-        and _is_onboarded_annotator(r.get("annotator_name"))
-        and r.get("state") == state_name
-        and r.get("annotator_name") != user.get("username")
-    ]
+    return []
 
 
 def _load_annotation_record(annotation_id):
