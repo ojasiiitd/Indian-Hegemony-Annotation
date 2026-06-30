@@ -1332,6 +1332,7 @@ def admin():
     query_state = (request.args.get("state") or "").strip()
     query_annotator = (request.args.get("annotator") or "").strip()
     query_validation = (request.args.get("validation") or "").strip()
+    query_onboarded = (request.args.get("onboarded") or "").strip()
     query_drafts = (request.args.get("drafts") or "hide").strip() or "hide"
     query_sort = (request.args.get("sort") or "date_desc").strip() or "date_desc"
     try:
@@ -1348,6 +1349,9 @@ def admin():
             annotator_name = (r.get("annotator_name") or "").strip().lower()
             if query_annotator.lower() not in annotator_name:
                 continue
+        is_onboarded = _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET
+        if query_onboarded == "only" and not is_onboarded:
+            continue
         is_completed = _is_annotation_completed(r)
         if query_drafts == "hide" and not is_completed:
             continue
@@ -1361,7 +1365,7 @@ def admin():
         filtered_records.append({
             **r,
             "_is_completed": is_completed,
-            "_is_onboarded": _normalize_username(r.get("annotator_name")) in ONBOARDED_ANNOTATOR_SET,
+            "_is_onboarded": is_onboarded,
             "_acceptance_status": acceptance_status,
             "_annotator_addressed_status": _annotator_addressed_status(r.get("annotator_addressed")),
             "_is_validated": is_validated,
@@ -1440,6 +1444,7 @@ def admin():
         "state": query_state,
         "annotator": query_annotator,
         "validation": query_validation,
+        "onboarded": query_onboarded,
         "drafts": query_drafts,
         "sort": query_sort,
     }
@@ -1476,6 +1481,7 @@ def admin():
         query_state=query_state,
         query_annotator=query_annotator,
         query_validation=query_validation,
+        query_onboarded=query_onboarded,
         query_drafts=query_drafts,
         query_sort=query_sort,
         sort_options={key: option["label"] for key, option in sort_options.items()},

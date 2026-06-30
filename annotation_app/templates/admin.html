@@ -386,6 +386,18 @@
           </div>
 
           <div class="field mt-1">
+            <label class="label">Annotator Scope</label>
+            <label class="radio mr-4">
+              <input type="radio" name="onboarded" value="" {% if not query_onboarded %}checked{% endif %}>
+              All Annotators
+            </label>
+            <label class="radio mr-4">
+              <input type="radio" name="onboarded" value="only" {% if query_onboarded == "only" %}checked{% endif %}>
+              Onboarded Only
+            </label>
+          </div>
+
+          <div class="field mt-1">
             <label class="label">Drafts</label>
             <label class="radio mr-4">
               <input type="radio" name="drafts" value="all" {% if query_drafts == "all" %}checked{% endif %}>
