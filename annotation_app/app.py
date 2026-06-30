@@ -1427,10 +1427,11 @@ def admin():
     query_summary_counts = {
         "total": total_filtered_records,
         "validated": sum(1 for record in filtered_records if record.get("_is_validated")),
-        "approved": sum(
-            1 for record in filtered_records
-            if str(record.get("isAccept") or "").strip().casefold() == "yes"
+        "approved": sum(1 for record in filtered_records if record.get("_acceptance_status") == "accepted"),
+        "needs_restructuring": sum(
+            1 for record in filtered_records if record.get("_acceptance_status") == "needs_restructuring"
         ),
+        "rejected": sum(1 for record in filtered_records if record.get("_acceptance_status") == "rejected"),
     }
     show_query_summary = bool(request.args)
     total_pages = max((total_filtered_records + results_per_page - 1) // results_per_page, 1)

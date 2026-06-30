@@ -263,6 +263,93 @@
     color: #667085;
     font-size: 0.9rem;
   }
+
+  .summary-tooltip-shell {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: default;
+  }
+
+  .summary-tooltip-popover {
+    position: absolute;
+    top: calc(100% + 0.55rem);
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 13rem;
+    padding: 0.7rem 0.8rem;
+    border-radius: 12px;
+    background: rgba(18, 24, 38, 0.96);
+    color: #f8fafc;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.22);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.16s ease, visibility 0.16s ease;
+    z-index: 10;
+    text-align: left;
+  }
+
+  .summary-tooltip-popover::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    transform: translateX(-50%) rotate(45deg);
+    background: rgba(18, 24, 38, 0.96);
+  }
+
+  .summary-tooltip-shell:hover .summary-tooltip-popover,
+  .summary-tooltip-shell:focus-within .summary-tooltip-popover {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .summary-tooltip-list {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .summary-tooltip-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.9rem;
+    font-size: 0.84rem;
+    line-height: 1.2;
+  }
+
+  .summary-tooltip-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  .summary-tooltip-dot {
+    width: 0.68rem;
+    height: 0.68rem;
+    border-radius: 999px;
+    flex: 0 0 auto;
+  }
+
+  .summary-tooltip-dot.green {
+    background: #48c774;
+  }
+
+  .summary-tooltip-dot.yellow {
+    background: #f4c542;
+  }
+
+  .summary-tooltip-dot.red {
+    background: #f14668;
+  }
+
+  .summary-tooltip-value {
+    font-weight: 700;
+  }
 </style>
 {% endblock %}
 
@@ -433,7 +520,34 @@
             </div>
             <div class="column is-4">
               <div class="box has-text-centered">
-                <p class="heading">Reviewed</p>
+                <div class="summary-tooltip-shell" tabindex="0">
+                  <p class="heading mb-1">Reviewed</p>
+                  <div class="summary-tooltip-popover">
+                    <div class="summary-tooltip-list">
+                      <div class="summary-tooltip-row">
+                        <span class="summary-tooltip-label">
+                          <span class="summary-tooltip-dot green"></span>
+                          Approved
+                        </span>
+                        <span class="summary-tooltip-value">{{ query_summary_counts.approved }}</span>
+                      </div>
+                      <div class="summary-tooltip-row">
+                        <span class="summary-tooltip-label">
+                          <span class="summary-tooltip-dot yellow"></span>
+                          Needs Restructuring
+                        </span>
+                        <span class="summary-tooltip-value">{{ query_summary_counts.needs_restructuring }}</span>
+                      </div>
+                      <div class="summary-tooltip-row">
+                        <span class="summary-tooltip-label">
+                          <span class="summary-tooltip-dot red"></span>
+                          Rejected
+                        </span>
+                        <span class="summary-tooltip-value">{{ query_summary_counts.rejected }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
                 <p class="title is-4">{{ query_summary_counts.validated }}</p>
               </div>
             </div>
