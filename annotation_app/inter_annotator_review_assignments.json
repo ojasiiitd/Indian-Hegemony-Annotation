@@ -1,4 +1,75 @@
 {
+  "andhra pradesh": {
+    "selected_annotation_ids": [
+    "c6f1d80b-3b54-4f53-9c8e-f603d56d5dea",
+    "53b7c33e-7ffc-45bb-aabc-ac81af78cac9",
+    "34b0dcf1-6888-4174-94ef-fcd6ec61be83",
+    "25ce764d-dba7-4432-90d8-1097c11ec808",
+    "29ebfba8-2129-430b-9749-18ad21f46da4",
+    "6774c952-a205-4ddd-9a29-ec08694e2b31",
+    "f245f543-8e42-4413-b053-da6e1adfb7e3",
+    "0d9d0fb0-35cf-4c75-b277-e786bdd42494",
+    "603c6a48-4f86-4bf1-9f73-75068284f43e",
+    "fc461884-c619-44e7-b757-fda9844d1c0d",
+    "1e118807-22e7-403f-bfba-a045b7871d04",
+    "9449f323-1829-4da8-afc1-b9ca0f5fad9a",
+    "06a432df-d761-4bd8-97dd-bc5f6422bc96",
+    "3e57f50c-05f2-4ed7-9f17-208adead67fc",
+    "98ddc2cf-1512-43ac-a5d0-505fb675a277",
+
+    "15d54630-b9a3-4728-baf1-114535c437a6",
+    "2b97427f-ea5c-49fe-ac4b-9aa9266ee4ab",
+    "0e2bc36d-ef98-41b1-8e75-70b9e592b6c9",
+    "142f6454-6349-4656-9abb-40ea30813f54",
+    "9dda1cc2-86a2-455b-b80a-41628164d531",
+    "2ed66681-7ea1-4b7f-8ff5-24d4fd1aea50",
+    "76c7a691-2826-459a-b2fa-9e94fb36b917",
+    "d2992630-fdf3-4037-8b7e-094f3af0a7d8",
+    "a13874fa-df8d-430c-b23d-fa1e5dad3aa7",
+    "cc23e332-6184-4a15-ac30-ec5c3e79902c",
+    "5659ba7f-c86e-4bbf-a1d7-5f69baf830d4",
+    "56ce9a46-02ab-4b2c-aa18-c4838b6eadff",
+    "a836fec8-998a-470e-8137-c8aad1993051",
+    "4aa5be83-b6fc-4eac-9b38-8e38f8a8fd86",
+    "4b5c80c6-dbd6-4bab-a858-c45c00847c44"
+  ],
+    "assignments_by_reviewer": {
+      "Veera Hymavathi Sirisipalli": [
+      "15d54630-b9a3-4728-baf1-114535c437a6",
+      "2b97427f-ea5c-49fe-ac4b-9aa9266ee4ab",
+      "0e2bc36d-ef98-41b1-8e75-70b9e592b6c9",
+      "142f6454-6349-4656-9abb-40ea30813f54",
+      "9dda1cc2-86a2-455b-b80a-41628164d531",
+      "2ed66681-7ea1-4b7f-8ff5-24d4fd1aea50",
+      "76c7a691-2826-459a-b2fa-9e94fb36b917",
+      "d2992630-fdf3-4037-8b7e-094f3af0a7d8",
+      "a13874fa-df8d-430c-b23d-fa1e5dad3aa7",
+      "cc23e332-6184-4a15-ac30-ec5c3e79902c",
+      "5659ba7f-c86e-4bbf-a1d7-5f69baf830d4",
+      "56ce9a46-02ab-4b2c-aa18-c4838b6eadff",
+      "a836fec8-998a-470e-8137-c8aad1993051",
+      "4aa5be83-b6fc-4eac-9b38-8e38f8a8fd86",
+      "4b5c80c6-dbd6-4bab-a858-c45c00847c44"
+      ],
+      "Sylesh": [
+      "c6f1d80b-3b54-4f53-9c8e-f603d56d5dea",
+      "53b7c33e-7ffc-45bb-aabc-ac81af78cac9",
+      "34b0dcf1-6888-4174-94ef-fcd6ec61be83",
+      "25ce764d-dba7-4432-90d8-1097c11ec808",
+      "29ebfba8-2129-430b-9749-18ad21f46da4",
+      "6774c952-a205-4ddd-9a29-ec08694e2b31",
+      "f245f543-8e42-4413-b053-da6e1adfb7e3",
+      "0d9d0fb0-35cf-4c75-b277-e786bdd42494",
+      "603c6a48-4f86-4bf1-9f73-75068284f43e",
+      "fc461884-c619-44e7-b757-fda9844d1c0d",
+      "1e118807-22e7-403f-bfba-a045b7871d04",
+      "9449f323-1829-4da8-afc1-b9ca0f5fad9a",
+      "06a432df-d761-4bd8-97dd-bc5f6422bc96",
+      "3e57f50c-05f2-4ed7-9f17-208adead67fc",
+      "98ddc2cf-1512-43ac-a5d0-505fb675a277"
+      ]
+    }
+  },
   "haryana": {
     "selected_annotation_ids": [
       "88fdb001-8289-4060-ba46-fba4e3226ab3",

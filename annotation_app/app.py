@@ -244,6 +244,10 @@ def _load_persisted_iar_assignments():
     return data if isinstance(data, dict) else {}
 
 
+def _persisted_review_state_names():
+    return list(_load_persisted_iar_assignments().keys())
+
+
 def _save_persisted_iar_assignments(assignments):
     assignments_path = _iar_assignments_file_path()
     assignments_path.parent.mkdir(parents=True, exist_ok=True)
@@ -522,7 +526,7 @@ def _build_seeded_state_selected_records(records, state_name):
 
 def _reviewable_records_for_user(records, user):
     if user.get("role") == "admin":
-        configured_state_names = list(STATE_REVIEW_ASSIGNMENT_CONFIGS.keys())
+        configured_state_names = _persisted_review_state_names()
         admin_records = []
         for state_name in configured_state_names:
             persisted_assignment = _get_persisted_state_assignment(records, state_name)
@@ -538,14 +542,14 @@ def _reviewable_records_for_user(records, user):
         ]
 
     state_name = user.get("state")
+    persisted_assignment = _get_persisted_state_assignment(records, state_name)
+    reviewer_key = _effective_inter_annotator_review_username(user.get("username"))
+    if persisted_assignment:
+        assigned_ids = (persisted_assignment.get("assignments_by_reviewer") or {}).get(reviewer_key, [])
+        return _record_ids_to_records(records, assigned_ids)
+
     config = _get_state_review_assignment_config(state_name)
     if config:
-        persisted_assignment = _get_persisted_state_assignment(records, state_name)
-        reviewer_key = _effective_inter_annotator_review_username(user.get("username"))
-        if persisted_assignment:
-            assigned_ids = (persisted_assignment.get("assignments_by_reviewer") or {}).get(reviewer_key, [])
-            return _record_ids_to_records(records, assigned_ids)
-
         assignments = _build_seeded_state_review_assignments(records, state_name)
         return assignments.get(reviewer_key, [])
 
