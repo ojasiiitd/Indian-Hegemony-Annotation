@@ -1339,6 +1339,7 @@ def admin():
     query_onboarded = (request.args.get("onboarded") or "").strip()
     query_drafts = (request.args.get("drafts") or "hide").strip() or "hide"
     query_sort = (request.args.get("sort") or "date_desc").strip() or "date_desc"
+    query_download = (request.args.get("download") or "").strip().lower()
     try:
         query_page = max(int(request.args.get("page", "1")), 1)
     except ValueError:
@@ -1437,6 +1438,65 @@ def admin():
         ),
         "rejected": sum(1 for record in filtered_records if record.get("_acceptance_status") == "rejected"),
     }
+
+    if query_download == "csv":
+        csv_buffer = io.StringIO()
+        csv_writer = csv.writer(csv_buffer)
+        csv_writer.writerow([
+            "Sr. No.",
+            "ID",
+            "Date",
+            "State",
+            "Annotator",
+            "Status",
+            "Base Prompt",
+            "Identity-Primed Prompt",
+            "Validated",
+            "Review Outcome",
+            "Addressed",
+        ])
+
+        acceptance_labels = {
+            "accepted": "Approved",
+            "needs_restructuring": "Needs Restructuring",
+            "rejected": "Rejected",
+            "pending": "Pending",
+        }
+        addressed_labels = {
+            "yes": "Yes",
+            "no": "No",
+            "pending": "Pending",
+        }
+
+        for index, record in enumerate(filtered_records, start=1):
+            csv_writer.writerow([
+                index,
+                record.get("id", ""),
+                (record.get("timestamp") or record.get("created_at") or "")[:10],
+                record.get("state", ""),
+                record.get("annotator_name", ""),
+                "Completed" if record.get("_is_completed") else "Draft",
+                ((record.get("prompts") or {}).get("base") or ""),
+                ((record.get("prompts") or {}).get("identity") or ""),
+                "Validated" if record.get("_is_validated") else "Pending",
+                acceptance_labels.get(record.get("_acceptance_status"), "Pending"),
+                (
+                    addressed_labels.get(record.get("_annotator_addressed_status"), "Pending")
+                    if record.get("_acceptance_status") == "needs_restructuring"
+                    else ""
+                ),
+            ])
+
+        timestamp_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"admin_filtered_annotations_{timestamp_suffix}.csv"
+        return Response(
+            csv_buffer.getvalue(),
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            },
+        )
+
     show_query_summary = bool(request.args)
     total_pages = max((total_filtered_records + results_per_page - 1) // results_per_page, 1)
     if query_page > total_pages:
@@ -1458,6 +1518,10 @@ def admin():
         params = {**pagination_params, "page": page_number}
         clean_params = {key: value for key, value in params.items() if value not in ("", None)}
         return f"{url_for('admin')}?{urlencode(clean_params)}"
+
+    export_params = {**pagination_params, "download": "csv"}
+    clean_export_params = {key: value for key, value in export_params.items() if value not in ("", None)}
+    csv_download_url = f"{url_for('admin')}?{urlencode(clean_export_params)}"
 
     page_numbers = list(range(max(1, query_page - 2), min(total_pages, query_page + 2) + 1))
 
@@ -1482,6 +1546,7 @@ def admin():
         prev_page_url=_admin_page_url(query_page - 1) if query_page > 1 else None,
         next_page_url=_admin_page_url(query_page + 1) if query_page < total_pages else None,
         page_urls={page_number: _admin_page_url(page_number) for page_number in page_numbers},
+        csv_download_url=csv_download_url,
         available_states=available_states,
         query_state=query_state,
         query_annotator=query_annotator,

@@ -559,7 +559,14 @@
             </div>
           </div>
         {% endif %}
-        <h2 class="title is-5">Query Results ({{ total_filtered_records }})</h2>
+        <div class="is-flex is-justify-content-space-between is-align-items-center mb-3">
+          <h2 class="title is-5 mb-0">Query Results ({{ total_filtered_records }})</h2>
+          {% if filtered_records %}
+            <a class="button is-success is-light is-small" href="{{ csv_download_url }}">
+              Download Filtered CSV
+            </a>
+          {% endif %}
+        </div>
         {% if not filtered_records %}
           <p>No annotations match the selected filters.</p>
         {% else %}
