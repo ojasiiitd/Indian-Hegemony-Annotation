@@ -39,6 +39,13 @@ ONBOARDED_ANNOTATOR_USERNAMES = [
 	"Manorath Thacker",
 	"Payal",
 	"hareeshreji",
+	"Akhlaqur@12345",
+	"binduhemant",
+	"Gayathri",
+	"Sylesh",
+	"Som_Shikhar",
+	"PallaviBeauvoir",
+	"Palak_Shah",
 ]
 
 ONBOARDED_ANNOTATOR_USERNAMES_STATES = {
@@ -64,6 +71,13 @@ ONBOARDED_ANNOTATOR_USERNAMES_STATES = {
 	"Manorath Thacker": "Gujarat",
 	"Payal": "Odisha",
 	"hareeshreji": "Kerala",
+	"Akhlaqur@12345": "Bihar",
+	"binduhemant": "Andhra Pradesh",
+	"Gayathri": "Andhra Pradesh",
+	"Sylesh": "Andhra Pradesh",
+	"Som_Shikhar": "Odisha",
+	"PallaviBeauvoir": "Odisha",
+	"Palak_Shah" : "Gujarat"
 }
 
 HEGEMONY_AXES = [
