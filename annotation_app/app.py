@@ -1442,50 +1442,10 @@ def admin():
     if query_download == "csv":
         csv_buffer = io.StringIO()
         csv_writer = csv.writer(csv_buffer)
-        csv_writer.writerow([
-            "Sr. No.",
-            "ID",
-            "Date",
-            "State",
-            "Annotator",
-            "Status",
-            "Base Prompt",
-            "Identity-Primed Prompt",
-            "Validated",
-            "Review Outcome",
-            "Addressed",
-        ])
+        csv_writer.writerow(HEADERS)
 
-        acceptance_labels = {
-            "accepted": "Approved",
-            "needs_restructuring": "Needs Restructuring",
-            "rejected": "Rejected",
-            "pending": "Pending",
-        }
-        addressed_labels = {
-            "yes": "Yes",
-            "no": "No",
-            "pending": "Pending",
-        }
-
-        for index, record in enumerate(filtered_records, start=1):
-            csv_writer.writerow([
-                index,
-                record.get("id", ""),
-                (record.get("timestamp") or record.get("created_at") or "")[:10],
-                record.get("state", ""),
-                record.get("annotator_name", ""),
-                "Completed" if record.get("_is_completed") else "Draft",
-                ((record.get("prompts") or {}).get("base") or ""),
-                ((record.get("prompts") or {}).get("identity") or ""),
-                "Validated" if record.get("_is_validated") else "Pending",
-                acceptance_labels.get(record.get("_acceptance_status"), "Pending"),
-                (
-                    addressed_labels.get(record.get("_annotator_addressed_status"), "Pending")
-                    if record.get("_acceptance_status") == "needs_restructuring"
-                    else ""
-                ),
-            ])
+        for record in filtered_records:
+            csv_writer.writerow(json_to_row(record))
 
         timestamp_suffix = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"admin_filtered_annotations_{timestamp_suffix}.csv"
